@@ -1520,22 +1520,43 @@ function updateMinimapPIE(nodeId) {
     );
   });
 }
-function pieFlip(idx) {
-  const inner = document.getElementById('pie-flip-' + idx);
-  const back  = document.getElementById('pie-flip-back-' + idx);
-  if (!inner || !back) return;
-  const flipped = inner.getAttribute('data-flipped') === '1';
-  if (!flipped) {
+function pieExpandMod(id) {
+  const body  = document.getElementById('pie-mod-exp-' + id);
+  const arrow = document.getElementById('pie-mod-arr-' + id);
+  if (!body) return;
+  body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+function pieToggleExpand() {
+  const sec = document.getElementById('pie-expand-mod-grave');
+  const tri = document.getElementById('pie-arr-tri');
+  if (!sec) return;
+  const opening = !sec.classList.contains('open');
+  sec.classList.toggle('open');
+  if (tri) tri.classList.toggle('open');
+  if (opening) setTimeout(() => sec.scrollIntoView({ behavior:'smooth', block:'nearest' }), 50);
+}
+function pieFlipSev() {
+  const inner = document.getElementById('pie-fi-sev');
+  if (!inner) return;
+  const isF = inner.getAttribute('data-f') === '1';
+  const back = inner.querySelector('.pie-ff-back');
+  if (!isF) {
     back.style.position = 'relative'; back.style.transform = 'none';
     back.style.webkitTransform = 'none'; back.style.visibility = 'hidden';
     const h = back.offsetHeight;
-    back.style.position = 'absolute'; back.style.transform = 'rotateY(180deg)';
-    back.style.webkitTransform = 'rotateY(180deg)'; back.style.visibility = '';
-    inner.style.height = h + 'px';
-  } else { inner.style.height = ''; }
-  inner.style.transform = flipped ? '' : 'rotateY(180deg)';
-  inner.style.webkitTransform = flipped ? '' : 'rotateY(180deg)';
-  inner.setAttribute('data-flipped', flipped ? '0' : '1');
+    back.style.position = 'absolute'; back.style.transform = 'rotateY(180deg) translateZ(1px)';
+    back.style.webkitTransform = 'rotateY(180deg) translateZ(1px)'; back.style.visibility = '';
+    if (h > 0) inner.style.height = h + 'px';
+  } else {
+    inner.addEventListener('transitionend', function handler() {
+      inner.style.height = '';
+      inner.removeEventListener('transitionend', handler);
+    });
+  }
+  inner.style.transform = isF ? '' : 'rotateY(180deg)';
+  inner.style.webkitTransform = isF ? '' : 'rotateY(180deg)';
+  inner.setAttribute('data-f', isF ? '0' : '1');
 }
 
 /* ═════════════════════════════════════════════
@@ -1546,99 +1567,163 @@ function renderNodePIE(nodeId) {
   if (!node) return;
 
   const sublabels = {
-    pie_start:    'Presentación · Pie Diabético',
+    pie_start:    'Sospecha Clínica',
     pie_severity: 'Clasificación de Severidad',
-    pie_leve:     'Infección Leve — Ambulatorio',
-    pie_moderada: 'Infección Moderada',
-    pie_grave:    'Infección Grave — Internación',
+    pie_leve:     'Tratamiento — Leve',
+    pie_moderada: 'Tratamiento — Moderada',
+    pie_grave:    'Tratamiento — Grave',
   };
   const sub = document.getElementById('pie-step-sublabel');
   if (sub) sub.textContent = sublabels[nodeId] || '';
 
   const fill = document.getElementById('pie-progress-fill');
-  if (fill) fill.style.width = Math.min(pie_history.length * 33, 100) + '%';
+  if (fill) fill.style.width = Math.round(((node.step - 1) / 5) * 100) + '%';
 
   let html = '';
 
-  /* ── PRESENTACIÓN ──────────────────────── */
+  /* ── SOSPECHA / PIE_START ──────────────── */
   if (node.type === 'pie_start') {
+    const criteria = ['Presencia de lesión ulcerada','Edema local o induración','Eritema local que no desaparece con elevación de la extremidad durante 30 s','Dolor y/o sensibilidad local','Calor localizado','Secreción purulenta a través de lesión ulcerada'];
+    const labs     = ['Hemograma · Funcional renal · Funcional y enzimograma hepático · Ionograma','Glicemia y hemoglobina glicosilada','Proteína C reactiva · Velocidad de eritrosedimentación'];
+    const critHTML = criteria.map(i => `<div style="display:flex;gap:8px;font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f0f4f8;line-height:1.4"><span style="flex-shrink:0;color:#555">•</span><span>${i}</span></div>`).join('');
+    const labsHTML = labs.map(i => `<div style="display:flex;gap:8px;font-size:12.5px;color:#334155;padding:4px 0;border-bottom:1px solid #f0f4f8;line-height:1.4"><span style="flex-shrink:0;color:#555">•</span><span>${i}</span></div>`).join('');
+    const hlRow = t => `<div style="display:flex;gap:8px;font-size:12.5px;color:#334155;padding:4px 0 4px 7px;border-bottom:1px solid #fde68a;border-left:3px solid #f59e0b;background:#fff9c4;border-radius:3px;line-height:1.4;margin-bottom:2px"><span style="flex-shrink:0;color:#555">•</span><span>${t}</span></div>`;
     html = `
-      <div class="step-card" style="padding:13px">
-        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0891b2 0%,#0369a1 100%);box-shadow:0 3px 10px rgba(8,145,178,.35);margin-bottom:12px">
-          <h2>INFECCIÓN DE PIE DIABÉTICO</h2>
-          <p style="font-size:11px;opacity:.85;margin-top:3px">G-4 · Guía PROA — Hospital de Clínicas</p>
-        </div>
-        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px">
-          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.4px;margin-bottom:6px">Factores de riesgo</div>
-          <div style="font-size:11.5px;color:#475569;line-height:1.5">• Neuropatía periférica · Arteriopatía periférica<br>• Úlcera o solución de continuidad en el pie<br>• Hiperglucemia no controlada</div>
-        </div>
-        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:var(--radius-sm);padding:9px 12px;margin-bottom:10px">
-          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#92400e;letter-spacing:.4px;margin-bottom:4px">⚠️ Diagnóstico de infección</div>
-          <div style="font-size:11.5px;color:#78350f;line-height:1.5">≥ 2 signos de inflamación local (calor, rubor, tumor, dolor, secreción purulenta) y/o repercusión sistémica</div>
-        </div>
-        <button onclick="pieNavigate('pie_severity')"
-          style="width:100%;background:linear-gradient(160deg,#0891b2,#0369a1);color:white;border:none;border-radius:10px;padding:13px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;position:relative;overflow:hidden;box-shadow:0 3px 8px rgba(8,145,178,.3);margin-bottom:8px">
+      <div class="step-card" style="padding:15px">
+        <div style="background:linear-gradient(135deg,#b45309,#92400e);border-radius:var(--radius-sm);padding:11px 14px;text-align:center;color:white;margin-bottom:12px;position:relative;overflow:hidden">
           <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
-          Clasificar Severidad →
-        </button>
-        <button class="btn-tables" onclick="showTablesPIE(0)">📋 Tabla 1 — Criterios SIRS y qSOFA</button>
-      </div>`;
+          <h2 style="font-size:16px;font-weight:800;letter-spacing:.3px;position:relative;z-index:1">INFECCIÓN EN PIE DIABÉTICO</h2>
+          <p style="font-size:11px;opacity:.8;margin-top:3px;position:relative;z-index:1">Paciente con Diabetes Mellitus y sospecha de infección en pie</p>
+        </div>
+        <div style="font-size:12.5px;font-weight:700;color:#334155;margin-bottom:6px">Sospecha si presenta al menos 2 de:</div>
+        ${critHTML}
+        <div style="font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;color:#111;margin-bottom:5px;border-bottom:2px solid #111;padding-bottom:3px;margin-top:12px">Solicite y valore</div>
+        ${labsHTML}
+        ${hlRow('<strong>Radiografía de pie</strong> (vista anterior y lateral)')}
+        ${hlRow('<strong>Pulsos distales:</strong> pedio y tibial posterior')}
+        ${hlRow('<strong>Eco Doppler</strong> arterial y venoso de MMII (oportunidad según clínica)')}
+      </div>
+      <button onclick="pieNavigate('${node.next}')"
+        style="display:block;width:100%;background:linear-gradient(160deg,#1a5472,#0d3a52);color:white;border:none;border-radius:var(--radius);padding:14px 16px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;text-align:center;box-shadow:0 3px 8px rgba(13,58,82,.3);margin-top:4px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+        Determinar severidad →
+      </button>`;
   }
 
   /* ── SEVERIDAD ─────────────────────────── */
   else if (node.type === 'pie_severity') {
-    const optionsHTML = node.options.map(o => `
-      <button onclick="pieNavigate('${o.next}')"
-        style="display:block;width:100%;background:linear-gradient(160deg,${o.gf},${o.gt});color:white;border:none;border-radius:10px;padding:12px 14px;cursor:pointer;font-family:inherit;text-align:left;position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15);margin-bottom:8px">
-        <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
-        <div style="font-size:13px;font-weight:800;margin-bottom:5px">${o.label}</div>
-        ${o.criteria.map(c=>`<div style="font-size:10.5px;opacity:.9;line-height:1.4">• ${c}</div>`).join('')}
-      </button>`).join('');
+    const sevBlocks = node.options.map(o => `
+      <div style="border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md);cursor:pointer;margin-bottom:6px" onclick="pieNavigate('${o.next}')">
+        <div style="padding:11px 14px;font-size:13px;font-weight:800;color:white;background:linear-gradient(160deg,${o.gf},${o.gt});position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+          ${o.label}
+        </div>
+        <div style="background:white;padding:10px 14px;border:1.5px solid ${o.sc};border-top:none;border-radius:0 0 var(--radius) var(--radius)">
+          ${o.criteria.map(c=>`<div style="font-size:12px;color:${o.tc};margin-bottom:3px;line-height:1.45">• ${c}</div>`).join('')}
+          <button style="display:block;width:100%;background:linear-gradient(160deg,${o.gf},${o.gt});color:white;border:none;border-radius:var(--radius);padding:10px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;text-align:center;margin-top:9px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+            Ver tratamiento →
+          </button>
+        </div>
+      </div>`).join('');
+
+    const clRows  = PIE_OSTEO.criteriosCl.map(i => `<div style="font-size:11.5px;color:#1e293b;line-height:1.45;margin-bottom:3px">• ${i}</div>`).join('');
+    const rxRows  = PIE_OSTEO.criteriosRx.map(i => `<div style="font-size:11.5px;color:#1e293b;line-height:1.45;margin-bottom:3px">• ${i}</div>`).join('');
+    const algRows = PIE_OSTEO.algoritmo.map(a => `
+      <div style="margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid #bae6fd">
+        <div style="font-size:10.5px;font-weight:800;color:#0369a1;margin-bottom:5px;line-height:1.4">${a.hd}</div>
+        ${a.items.map(i=>`<div style="font-size:11.5px;color:#334155;line-height:1.4;margin-bottom:2px">→ ${i}</div>`).join('')}
+      </div>`).join('');
+
     html = `
-      <div class="step-card" style="padding:13px">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#64748b;letter-spacing:.5px;margin-bottom:10px">Clasificación de severidad</div>
-        ${optionsHTML}
-        <button class="btn-tables" onclick="showTablesPIE(0)" style="margin-top:2px">📋 Tabla 1 — Criterios SIRS y qSOFA</button>
-        <div class="choices" style="margin-top:10px">
-          <button class="btn-back" onclick="pieGoBack()">← Volver</button>
+      <div class="step-card" style="padding:12px">
+        <div style="font-size:13px;font-weight:800;color:#1e293b;margin-bottom:10px">Clasificación de Severidad de la Infección</div>
+        <button class="btn-tables" onclick="showTablesPIE(0)">📋 Tabla 1 — Criterios SIRS y qSOFA</button>
+      </div>
+      ${sevBlocks}
+
+      <div class="pie-arrow-row">
+        <button class="pie-arr-back" onclick="pieGoBack()">
+          <div class="pie-arr-back-lbl">Volver</div>
+          <div class="pie-arr-left"></div>
+        </button>
+        <button class="pie-arr-center" onclick="pieToggleExpand()">
+          <div class="pie-arr-lbl">Si Moderada / Grave</div>
+          <div class="pie-arr-tri" id="pie-arr-tri"></div>
+        </button>
+      </div>
+
+      <div class="pie-expand" id="pie-expand-mod-grave">
+        <div class="pie-urgencia">
+          <div class="pie-urgencia-hdr">1. Valoración por equipo quirúrgico</div>
+          <div class="pie-urgencia-body">Valoración urgente. Definir criterio de abordaje, limpieza quirúrgica y revascularización según corresponda.</div>
+        </div>
+
+        <div class="pie-flip-wrap" onclick="pieFlipSev()">
+          <div class="pie-flip-inner" id="pie-fi-sev">
+            <div class="pie-ff pie-ff-front">
+              <div class="pie-flip-bar">
+                <span>2. Determinar presencia de Osteomielitis</span><span style="font-size:16px;opacity:.9">↺</span>
+              </div>
+              <div class="pie-flip-content">
+                <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#0369a1;margin-bottom:6px">Criterios clínicos y paraclínicos — al menos 1</div>
+                ${clRows}
+                <div style="margin-top:10px;padding-top:9px;border-top:1px solid #bae6fd">
+                  <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#0369a1;margin-bottom:6px">Elementos radiológicos en Rx</div>
+                  ${rxRows}
+                </div>
+                <div style="margin-top:7px;font-size:10.5px;font-weight:700;color:#0369a1;text-align:center;background:#e0f2fe;border-radius:6px;padding:5px">↺ Girar para ver el algoritmo imagenológico</div>
+              </div>
+            </div>
+            <div class="pie-ff pie-ff-back">
+              <div class="pie-flip-bar">
+                <span>Algoritmo imagenológico</span><span style="font-size:16px;opacity:.9">↺</span>
+              </div>
+              <div class="pie-flip-content">
+                ${algRows}
+                <div style="font-size:11px;color:#475569;font-style:italic;background:#e0f2fe;border-left:3px solid #0891b2;border-radius:0 5px 5px 0;padding:7px 10px;margin-top:2px">Considerar biopsia ósea diagnóstica para muestra microbiológica cuando sea posible.</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>`;
   }
 
   /* ── LEVE ──────────────────────────────── */
   else if (node.type === 'pie_leve') {
-    const orgsHTML = node.organisms.map(o => `<div style="font-size:11.5px;color:#1e293b;line-height:1.5;margin-bottom:3px">• ${o}</div>`).join('');
+    const orgsHTML = node.organisms.map(o => `<div style="font-size:11px;color:#334155;margin-bottom:3px;line-height:1.4">• ${o}</div>`).join('');
     const regsHTML = node.regimens.map(r => `
-      <div class="regimen-block" style="background:${r.bg};margin-bottom:7px">
+      <div class="regimen-block" style="background:${r.bg};margin-bottom:8px">
         <div class="regimen-label" style="color:${r.lc}">${r.label}</div>
         ${r.lines.map(l=>`<div class="drug-line">${l}</div>`).join('')}
       </div>`).join('');
-    const interdHTML = node.interdisciplinary.map(i =>
-      `<div style="font-size:11px;color:#1e293b;padding:4px 0;border-bottom:1px solid #e2e8f0;line-height:1.4"><strong>${i.lbl}:</strong> ${i.txt}</div>`
-    ).join('');
+    const interHTML = node.interdisciplinary.map(r =>
+      `<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #bae6fd;font-size:12px;line-height:1.4">
+        <span style="font-weight:800;color:#0369a1;flex-shrink:0;min-width:118px">${r.lbl}</span>
+        <span style="color:#0c4a6e">${r.txt}</span>
+      </div>`).join('');
     html = `
-      <div style="border-radius:var(--radius) var(--radius) 0 0;background:linear-gradient(160deg,${node.color},${node.gt});padding:14px 16px;color:white;position:relative;overflow:hidden">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.65;margin-bottom:5px">Tratamiento Recomendado</div>
+      <div style="border-radius:var(--radius) var(--radius) 0 0;background:linear-gradient(160deg,${node.color},${node.gt});padding:14px 15px;color:white;box-shadow:var(--shadow-md);position:relative;overflow:hidden">
         <div style="font-size:15px;font-weight:800;line-height:1.3">${node.title}</div>
-        <div style="font-size:11px;opacity:.8;margin-top:4px;background:rgba(0,0,0,.15);border-radius:6px;padding:4px 8px;display:inline-block">Ambulatorio</div>
+        <div style="font-size:10.5px;margin-top:5px;background:rgba(0,0,0,.2);border-radius:5px;padding:3px 8px;display:inline-block">Ambulatorio · No requiere cultivo</div>
         <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
       </div>
       <div class="treatment-body" style="border-radius:0 0 var(--radius) var(--radius)">
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:var(--radius-sm);padding:9px 11px;margin-bottom:10px">
-          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.4px;margin-bottom:5px">Gérmenes probables</div>
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;margin-bottom:5px">Microorganismos a cubrir</div>
           ${orgsHTML}
         </div>
         ${regsHTML}
-        <div class="duration-box" style="margin-top:8px">
+        <div class="duration-box">
           <h4>⏱️ Duración</h4>
           <p>${node.duration}</p>
         </div>
-        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:var(--radius-sm);padding:9px 11px;margin-top:8px">
-          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#166534;letter-spacing:.4px;margin-bottom:5px">Equipo multidisciplinario</div>
-          ${interdHTML}
+        <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:var(--radius-sm);padding:10px 12px;margin-top:10px">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#075985;letter-spacing:.4px;margin-bottom:8px">Refiera para abordaje interdisciplinario</div>
+          ${interHTML}
         </div>
       </div>
-      <div class="choices" style="margin-top:10px">
+      <div class="choices" style="margin-top:4px">
         <button class="btn-back" onclick="pieGoBack()">← Volver</button>
         <button class="btn-back" onclick="pieRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
@@ -1646,88 +1731,94 @@ function renderNodePIE(nodeId) {
 
   /* ── MODERADA / GRAVE (pie_mod_tx) ──────── */
   else if (node.type === 'pie_mod_tx') {
-    const orgsHTML = node.organisms.map(o => `<div style="font-size:11.5px;color:#1e293b;line-height:1.5;margin-bottom:3px">• ${o}</div>`).join('');
-    const cultHTML = node.cultivos.map(c => `<div style="font-size:11px;color:#0c4a6e;line-height:1.4;margin-bottom:2px">• ${c}</div>`).join('');
+    const orgsHTML = node.organisms.map(o => `<div style="font-size:11px;color:#334155;margin-bottom:3px;line-height:1.4">• ${o}</div>`).join('');
+    const cultHTML = node.cultivos.map(c => `<div style="font-size:11.5px;color:#1e293b;padding:5px 0;border-bottom:1px solid #f0f4f8;line-height:1.45">• ${c}</div>`).join('');
 
-    const makeCard = (card, idx) => {
-      const regiHTML = card.regimens.map(r =>
-        `<div class="regimen-block" style="background:${r.bg};margin-bottom:7px">
-          <div class="regimen-label" style="color:${r.lc}">${r.label}</div>
-          ${r.lines.map(l=>`<div class="drug-line">${l}</div>`).join('')}
+    const makeAcc = (card, key) => {
+      const regsHTML = card.regimens.map(r =>
+        `<div class="regimen-block" style="background:${r.bg};padding:8px 10px;margin-bottom:6px">
+          <div class="regimen-label" style="color:${r.lc};font-size:9.5px">${r.label}</div>
+          ${r.lines.map(l=>`<div class="drug-line" style="font-size:11.5px">${l}</div>`).join('')}
         </div>`).join('');
       return `
-        <div style="perspective:1000px;cursor:pointer;margin-bottom:10px" onclick="pieFlip(${idx})">
-          <div id="pie-flip-${idx}" style="position:relative;width:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)">
-            <div style="backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1.5px solid ${card.gf};border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
-              <div style="background:linear-gradient(160deg,${card.gf},${card.gt});color:white;padding:7px 11px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden">
-                <span>${card.frontTitle}</span>
-                <span style="font-size:16px;opacity:.9">↺</span>
-                <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 100%);pointer-events:none"></div>
-              </div>
-              <div style="background:white;padding:9px 11px;flex:1">
-                <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.3px;margin-bottom:5px">Gérmenes a Cubrir</div>
-                ${orgsHTML}
-              </div>
-              <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:6px 11px;font-size:10.5px;color:#475569;font-weight:700;text-align:center">
-                ↺ Girar para ver el tratamiento antibiótico
-              </div>
-            </div>
-            <div id="pie-flip-back-${idx}" style="position:absolute;top:0;left:0;width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);-webkit-transform:rotateY(180deg);border:1.5px solid ${card.gf};border-radius:10px;overflow:hidden">
-              <div style="background:linear-gradient(160deg,${card.gf},${card.gt});color:white;padding:7px 11px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden">
-                <span>${card.frontTitle} — Tratamiento</span>
-                <span style="font-size:16px;opacity:.9">↺</span>
-                <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 100%);pointer-events:none"></div>
-              </div>
-              <div style="background:white;padding:9px 11px">${regiHTML}</div>
-            </div>
+        <div class="pie-acc">
+          <div class="pie-acc-hdr" style="background:linear-gradient(160deg,${card.gf},${card.gt})" onclick="pieExpandMod('${key}')">
+            <span style="position:relative;z-index:1">${card.frontTitle}</span>
+            <span class="pie-acc-arrow" id="pie-mod-arr-${key}" style="position:relative;z-index:1">▼</span>
+          </div>
+          <div class="pie-acc-body" id="pie-mod-exp-${key}" style="--pie-acc-border:${card.gf}">
+            <div style="padding:8px 10px">${regsHTML}</div>
           </div>
         </div>`;
     };
 
-    const cardsHTML = node.singleCard
-      ? makeCard(node.treatment, 0)
-      : node.cards.map((c, i) => makeCard(c, i)).join('');
+    const cardsWrapper = node.singleCard
+      ? makeAcc(node.treatment, node.treatment.id)
+      : `<div style="border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md)">
+          <div style="background:linear-gradient(160deg,#1a5472,#0d3a52);color:white;padding:8px 13px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;position:relative;overflow:hidden">Tratamiento
+            <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.13) 0%,transparent 100%);pointer-events:none"></div>
+          </div>
+          <div style="background:#f0f4f8;padding:10px 10px 4px">
+            ${node.cards.map(c => makeAcc(c, c.id)).join('')}
+          </div>
+        </div>`;
 
     const m = node.monitoring;
-    const monSection = s => `
-      <div style="margin-bottom:8px">
-        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.4px;margin-bottom:4px">${s.title}</div>
-        ${s.items.map(it=>`<div style="font-size:11.5px;color:#475569;line-height:1.5;margin-bottom:3px">• ${it}</div>`).join('')}
+    const mRows = items => items.map(i => `<div style="font-size:11.5px;color:#334155;line-height:1.5;margin-bottom:4px;padding-left:8px;border-left:2px solid #e2e8f0">• ${i}</div>`).join('');
+    const monBlock = `
+      <div class="pie-acc">
+        <div class="pie-acc-hdr" style="background:linear-gradient(160deg,#334155,#1e293b);border-radius:var(--radius);font-size:11px;text-align:center;line-height:1.5" onclick="pieExpandMod('mon')">
+          <span style="position:relative;z-index:1;flex:1">
+            <div style="font-size:12px;font-weight:800">${m.header}</div>
+            <div style="font-size:10.5px;opacity:.75;margin-top:2px;font-weight:600">${m.headerSub}</div>
+          </span>
+          <span class="pie-acc-arrow" id="pie-mod-arr-mon" style="position:relative;z-index:1;margin-left:8px">▼</span>
+        </div>
+        <div class="pie-acc-body" id="pie-mod-exp-mon" style="--pie-acc-border:#334155">
+          <div style="padding:10px 13px;border-bottom:1px solid #e2e8f0">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#d97706;margin-bottom:7px">${m.sinOsteo.title}</div>
+            ${mRows(m.sinOsteo.items)}
+          </div>
+          <div style="padding:10px 13px;border-bottom:1px solid #e2e8f0">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#0369a1;margin-bottom:7px">${m.conOsteo.title}</div>
+            ${mRows(m.conOsteo.items)}
+          </div>
+          <div style="padding:10px 12px;border-bottom:1px solid #e2e8f0">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#991b1b;margin-bottom:7px">${m.urgente.title}</div>
+            ${mRows(m.urgente.items)}
+          </div>
+          <div style="padding:10px 12px">
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#065f46;margin-bottom:7px">${m.seguimiento.title}</div>
+            ${mRows(m.seguimiento.items)}
+          </div>
+        </div>
       </div>`;
 
     html = `
-      <div style="border-radius:var(--radius) var(--radius) 0 0;background:linear-gradient(160deg,${node.color},${node.gt});padding:12px 16px;color:white;position:relative;overflow:hidden;margin-bottom:10px">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.65;margin-bottom:3px">Infección ${node.title}</div>
-        <div style="font-size:14px;font-weight:800;line-height:1.3">${node.setting}</div>
+      <div style="border-radius:var(--radius) var(--radius) 0 0;background:linear-gradient(160deg,${node.color},${node.gt});padding:14px 15px;color:white;box-shadow:var(--shadow-md);position:relative;overflow:hidden">
+        <div style="font-size:15px;font-weight:800;line-height:1.3">${node.title}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap">
+          <div style="font-size:10.5px;background:rgba(0,0,0,.2);border-radius:5px;padding:3px 8px">${node.setting}</div>
+          ${!node.singleCard ? `<button onclick="event.stopPropagation();showTablesPIE(3)" class="ibtn" style="background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);color:white;font-size:10px;padding:2px 10px;margin-top:0">Anexo 4</button>` : ''}
+        </div>
         <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
       </div>
-
-      <div style="border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:10px">
-        <div style="background:linear-gradient(160deg,#0ea5e9,#0891b2);color:white;padding:9px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;position:relative;overflow:hidden">
-          🔬 Cultivos recomendados
+      <div style="border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md)">
+        <div style="background:linear-gradient(160deg,#0891b2,#0369a1);color:white;padding:8px 13px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;position:relative;overflow:hidden">🏥 Cultivos — al menos 1 técnica
           <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
         </div>
-        <div style="background:white;padding:10px 14px;border:1px solid #bae6fd;border-top:none;border-radius:0 0 var(--radius) var(--radius)">${cultHTML}</div>
+        <div style="background:white;padding:8px 13px;border:1.5px solid #bae6fd;border-top:none;border-radius:0 0 var(--radius) var(--radius)">${cultHTML}</div>
       </div>
-
-      ${cardsHTML}
-
-      <div style="border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:10px">
-        <div style="background:linear-gradient(160deg,#334155,#1e293b);color:white;padding:9px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;position:relative;overflow:hidden">
-          ⏱️ ${m.header}
-          <div style="font-size:10px;font-weight:400;opacity:.7;margin-top:2px;text-transform:none;letter-spacing:0">${m.headerSub}</div>
-          <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+      <div style="border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md)">
+        <div style="background:linear-gradient(160deg,#334155,#1e293b);color:white;padding:8px 13px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden">
+          <span>Microorganismos a cubrir</span>
+          <button onclick="event.stopPropagation();showTablesPIE(1)" class="ibtn" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);color:white;font-size:10px;padding:2px 9px;vertical-align:middle;position:relative;z-index:1">Anexo 2</button>
+          <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.12) 0%,transparent 100%);pointer-events:none"></div>
         </div>
-        <div style="background:white;padding:11px 14px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 var(--radius) var(--radius)">
-          ${monSection(m.sinOsteo)}
-          ${monSection(m.conOsteo)}
-          <div style="padding-top:8px;border-top:1px solid #e2e8f0">
-            ${monSection(m.urgente)}
-            ${monSection(m.seguimiento)}
-          </div>
-        </div>
+        <div style="background:white;padding:9px 13px;border:1.5px solid #e2e8f0;border-top:none;border-radius:0 0 var(--radius) var(--radius)">${orgsHTML}</div>
       </div>
-
+      ${cardsWrapper}
+      ${monBlock}
       <div class="choices" style="margin-top:4px">
         <button class="btn-back" onclick="pieGoBack()">← Volver</button>
         <button class="btn-back" onclick="pieRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
