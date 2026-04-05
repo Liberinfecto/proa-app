@@ -83,6 +83,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   background: linear-gradient(160deg, #eef3f8 0%, #e8eef5 100%);
   overflow: hidden;
 }
@@ -160,7 +161,7 @@ body {
 
 /* ── FLOW BODY ───────────────────────────────── */
 .flow-body {
-  padding: 14px 14px calc(20px + env(safe-area-inset-bottom));
+  padding: 14px 14px calc(32px + env(safe-area-inset-bottom));
   display: flex; flex-direction: column; gap: 10px;
   animation: fadeSlide .22s ease;
 }
