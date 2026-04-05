@@ -565,11 +565,101 @@
     </div>
   </div>
 
+  <!-- ═══ PIE FLOWCHART ═══ -->
+  <div id="screen-pie" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="header-title">
+          <h1>Infección en Pie Diabético</h1>
+          <p id="pie-step-sublabel">Evaluación inicial</p>
+        </div>
+        <button class="proa-pill" onclick="showTablesPIE(0)">Tablas</button>
+      </div>
+      <div class="minimap-panel" id="pie-minimap-panel">
+        <svg id="pie-minimap-svg" viewBox="0 0 330 105" width="100%" style="display:block;overflow:visible">
+          <defs>
+            <marker id="arr-pie" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+              <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
+            </marker>
+          </defs>
+
+          <!-- pie_start → pie_severity -->
+          <line x1="165" y1="25" x2="165" y2="35" stroke="rgba(255,255,255,.3)" stroke-width="1.5" marker-end="url(#arr-pie)"/>
+
+          <!-- pie_severity → 3 branches -->
+          <line x1="165" y1="55" x2="165" y2="58" stroke="rgba(255,255,255,.22)" stroke-width="1.3"/>
+          <line x1="52"  y1="58" x2="277" y2="58" stroke="rgba(255,255,255,.22)" stroke-width="1.3"/>
+          <line x1="52"  y1="58" x2="52"  y2="65" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-pie)"/>
+          <line x1="165" y1="58" x2="165" y2="65" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-pie)"/>
+          <line x1="277" y1="58" x2="277" y2="65" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-pie)"/>
+
+          <!-- ROW 0 -->
+          <rect id="pie-mm-pie_start"    x="105" y="5"  width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="pieJumpTo('pie_start')"/>
+          <text id="pie-mmt-pie_start"   x="165" y="18" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="8.5" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">Pie Diabético</text>
+
+          <!-- ROW 1 -->
+          <rect id="pie-mm-pie_severity"  x="105" y="35" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="pieJumpTo('pie_severity')"/>
+          <text id="pie-mmt-pie_severity" x="165" y="48" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="8.5" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Severidad</text>
+
+          <!-- ROW 2 -->
+          <rect id="pie-mm-pie_leve"      x="5"   y="65" width="95"  height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="pieJumpTo('pie_leve')"/>
+          <text id="pie-mmt-pie_leve"     x="52"  y="78" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Leve</text>
+
+          <rect id="pie-mm-pie_moderada"  x="117" y="65" width="96"  height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="pieJumpTo('pie_moderada')"/>
+          <text id="pie-mmt-pie_moderada" x="165" y="78" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Moderada</text>
+
+          <rect id="pie-mm-pie_grave"     x="229" y="65" width="95"  height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="pieJumpTo('pie_grave')"/>
+          <text id="pie-mmt-pie_grave"    x="277" y="78" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Grave</text>
+
+          <!-- Legend -->
+          <circle cx="10"  cy="97" r="4" fill="#f59e0b"/>
+          <text x="18" y="101" fill="rgba(255,255,255,.4)" font-size="7.5" font-family="system-ui,sans-serif">posición actual</text>
+          <rect x="148" y="92" width="10" height="8" rx="2" fill="rgba(255,255,255,.28)"/>
+          <text x="162" y="101" fill="rgba(255,255,255,.4)" font-size="7.5" font-family="system-ui,sans-serif">visitado</text>
+        </svg>
+      </div>
+      <div style="display:flex;justify-content:center;padding:2px 0 4px">
+        <button id="pie-minimap-arrow-btn" onclick="toggleMinimapPIE()"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+                 color:rgba(255,255,255,.7);border-radius:20px;padding:3px 16px;
+                 font-size:13px;cursor:pointer;line-height:1;transition:background .15s;font-family:inherit">▼</button>
+      </div>
+      <div class="flow-progress">
+        <div class="progress-track"><div class="progress-fill" id="pie-progress-fill" style="width:0%"></div></div>
+        <div class="progress-info"><span id="pie-progress-txt"></span><span id="pie-path-txt"></span></div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="screen-scroll">
+      <div class="flow-body" id="pie-flow-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══ PIE TABLES ═══ -->
+  <div id="screen-pie-tables" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" id="pie-tables-back-btn">←</button>
+        <div class="header-title">
+          <h1>Tablas de Referencia</h1>
+          <p>Pie Diabético · G-4</p>
+        </div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="tabs-bar" id="pie-tabs-bar"></div>
+    <div class="screen-scroll" style="overflow:hidden;display:flex;flex-direction:column;flex:1">
+      <div id="pie-tables-panels" style="display:flex;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+
 </div>
 
 <script src="flowcharts/iia.js"></script>
 <script src="flowcharts/ppb.js"></script>
 <script src="flowcharts/pa.js"></script>
+<script src="flowcharts/pie.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>

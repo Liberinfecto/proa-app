@@ -5,7 +5,7 @@ const GUIDES = [
   { id:'iia',      icon:'🦠', bg:'#fee2e2', name:'Infección Intra-Abdominal (IIA)',                                             ok:true  },
   { id:'pa',       icon:'🔥', bg:'#fef9c3', name:'Pancreatitis Aguda',                                                          ok:true  },
   { id:'ppb',      icon:'🩹', bg:'#fef3c7', name:'Infección de Piel y Partes Blandas',                                          ok:true  },
-  { id:'pie',      icon:'🦶', bg:'#fef3c7', name:'Infección en Pie Diabético',                                                  ok:false },
+  { id:'pie',      icon:'🦶', bg:'#fef3c7', name:'Infección en Pie Diabético',                                                  ok:true  },
   { id:'nac',      icon:'🫁', bg:'#e0f2fe', name:'Neumonía Aguda',                                                              ok:false },
   { id:'nih',      icon:'🏥', bg:'#e0f2fe', name:'Neumonía Intrahospitalaria',                                                  ok:false },
   { id:'nav',      icon:'💨', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:false },
@@ -285,6 +285,11 @@ const PA_JUMP_PATHS = {
   'pa_tx_g1':      ['pa_start','pa_segunda'],
   'pa_tx_g2':      ['pa_start','pa_segunda'],
 };
+
+/* ── PIE STATE ── */
+let pie_currentNode = 'pie_start';
+let pie_history     = [];
+let pie_activeTabIndex = 0;
 
 /* ═════════════════════════════════════════════
    PANCREATITIS AGUDA — NAV
@@ -1463,6 +1468,401 @@ function ppbScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   PIE DIABÉTICO — NAV
+═══════════════════════════════════════════════ */
+function pieGoBack() {
+  if (pie_history.length > 0) {
+    pie_currentNode = pie_history.pop();
+    renderNodePIE(pie_currentNode);
+  } else { goHome(); }
+}
+function pieNavigate(nodeId) {
+  pie_history.push(pie_currentNode);
+  pie_currentNode = nodeId;
+  renderNodePIE(nodeId);
+}
+function pieRestart() {
+  pie_history = []; pie_currentNode = 'pie_start';
+  renderNodePIE('pie_start');
+}
+function pieJumpTo(id) {
+  if (id === pie_currentNode) return;
+  if (PIE_JUMP_PATHS[id] !== undefined) {
+    pie_history = [...PIE_JUMP_PATHS[id]];
+    pie_currentNode = id;
+    renderNodePIE(id);
+  }
+}
+function toggleMinimapPIE() {
+  const panel = document.getElementById('pie-minimap-panel');
+  const btn   = document.getElementById('pie-minimap-arrow-btn');
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapPIE(nodeId) {
+  PIE_MM_IDS.forEach(id => {
+    const rect = document.getElementById('pie-mm-' + id);
+    const txt  = document.getElementById('pie-mmt-' + id);
+    if (!rect) return;
+    const isCurrent = (id === nodeId);
+    const isVisited  = pie_history.includes(id);
+    rect.setAttribute('fill',
+      isCurrent ? '#f59e0b' :
+      isVisited  ? 'rgba(255,255,255,.28)' :
+      'rgba(255,255,255,.1)'
+    );
+    rect.setAttribute('stroke',       isCurrent ? '#fbbf24' : 'none');
+    rect.setAttribute('stroke-width', isCurrent ? '2'       : '0');
+    if (txt) txt.setAttribute('fill',
+      isCurrent ? '#1e293b' :
+      isVisited  ? 'rgba(255,255,255,.85)' :
+      'rgba(255,255,255,.45)'
+    );
+  });
+}
+function pieFlip(idx) {
+  const inner = document.getElementById('pie-flip-' + idx);
+  const back  = document.getElementById('pie-flip-back-' + idx);
+  if (!inner || !back) return;
+  const flipped = inner.getAttribute('data-flipped') === '1';
+  if (!flipped) {
+    back.style.position = 'relative'; back.style.transform = 'none';
+    back.style.webkitTransform = 'none'; back.style.visibility = 'hidden';
+    const h = back.offsetHeight;
+    back.style.position = 'absolute'; back.style.transform = 'rotateY(180deg)';
+    back.style.webkitTransform = 'rotateY(180deg)'; back.style.visibility = '';
+    inner.style.height = h + 'px';
+  } else { inner.style.height = ''; }
+  inner.style.transform = flipped ? '' : 'rotateY(180deg)';
+  inner.style.webkitTransform = flipped ? '' : 'rotateY(180deg)';
+  inner.setAttribute('data-flipped', flipped ? '0' : '1');
+}
+
+/* ═════════════════════════════════════════════
+   PIE DIABÉTICO — RENDER
+═══════════════════════════════════════════════ */
+function renderNodePIE(nodeId) {
+  const node = NODES_PIE[nodeId];
+  if (!node) return;
+
+  const sublabels = {
+    pie_start:    'Presentación · Pie Diabético',
+    pie_severity: 'Clasificación de Severidad',
+    pie_leve:     'Infección Leve — Ambulatorio',
+    pie_moderada: 'Infección Moderada',
+    pie_grave:    'Infección Grave — Internación',
+  };
+  const sub = document.getElementById('pie-step-sublabel');
+  if (sub) sub.textContent = sublabels[nodeId] || '';
+
+  const fill = document.getElementById('pie-progress-fill');
+  if (fill) fill.style.width = Math.min(pie_history.length * 33, 100) + '%';
+
+  let html = '';
+
+  /* ── PRESENTACIÓN ──────────────────────── */
+  if (node.type === 'pie_start') {
+    html = `
+      <div class="step-card" style="padding:13px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0891b2 0%,#0369a1 100%);box-shadow:0 3px 10px rgba(8,145,178,.35);margin-bottom:12px">
+          <h2>INFECCIÓN DE PIE DIABÉTICO</h2>
+          <p style="font-size:11px;opacity:.85;margin-top:3px">G-4 · Guía PROA — Hospital de Clínicas</p>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.4px;margin-bottom:6px">Factores de riesgo</div>
+          <div style="font-size:11.5px;color:#475569;line-height:1.5">• Neuropatía periférica · Arteriopatía periférica<br>• Úlcera o solución de continuidad en el pie<br>• Hiperglucemia no controlada</div>
+        </div>
+        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:var(--radius-sm);padding:9px 12px;margin-bottom:10px">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#92400e;letter-spacing:.4px;margin-bottom:4px">⚠️ Diagnóstico de infección</div>
+          <div style="font-size:11.5px;color:#78350f;line-height:1.5">≥ 2 signos de inflamación local (calor, rubor, tumor, dolor, secreción purulenta) y/o repercusión sistémica</div>
+        </div>
+        <button onclick="pieNavigate('pie_severity')"
+          style="width:100%;background:linear-gradient(160deg,#0891b2,#0369a1);color:white;border:none;border-radius:10px;padding:13px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:800;position:relative;overflow:hidden;box-shadow:0 3px 8px rgba(8,145,178,.3);margin-bottom:8px">
+          <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+          Clasificar Severidad →
+        </button>
+        <button class="btn-tables" onclick="showTablesPIE(0)">📋 Tabla 1 — Criterios SIRS y qSOFA</button>
+      </div>`;
+  }
+
+  /* ── SEVERIDAD ─────────────────────────── */
+  else if (node.type === 'pie_severity') {
+    const optionsHTML = node.options.map(o => `
+      <button onclick="pieNavigate('${o.next}')"
+        style="display:block;width:100%;background:linear-gradient(160deg,${o.gf},${o.gt});color:white;border:none;border-radius:10px;padding:12px 14px;cursor:pointer;font-family:inherit;text-align:left;position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15);margin-bottom:8px">
+        <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+        <div style="font-size:13px;font-weight:800;margin-bottom:5px">${o.label}</div>
+        ${o.criteria.map(c=>`<div style="font-size:10.5px;opacity:.9;line-height:1.4">• ${c}</div>`).join('')}
+      </button>`).join('');
+    html = `
+      <div class="step-card" style="padding:13px">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#64748b;letter-spacing:.5px;margin-bottom:10px">Clasificación de severidad</div>
+        ${optionsHTML}
+        <button class="btn-tables" onclick="showTablesPIE(0)" style="margin-top:2px">📋 Tabla 1 — Criterios SIRS y qSOFA</button>
+        <div class="choices" style="margin-top:10px">
+          <button class="btn-back" onclick="pieGoBack()">← Volver</button>
+        </div>
+      </div>`;
+  }
+
+  /* ── LEVE ──────────────────────────────── */
+  else if (node.type === 'pie_leve') {
+    const orgsHTML = node.organisms.map(o => `<div style="font-size:11.5px;color:#1e293b;line-height:1.5;margin-bottom:3px">• ${o}</div>`).join('');
+    const regsHTML = node.regimens.map(r => `
+      <div class="regimen-block" style="background:${r.bg};margin-bottom:7px">
+        <div class="regimen-label" style="color:${r.lc}">${r.label}</div>
+        ${r.lines.map(l=>`<div class="drug-line">${l}</div>`).join('')}
+      </div>`).join('');
+    const interdHTML = node.interdisciplinary.map(i =>
+      `<div style="font-size:11px;color:#1e293b;padding:4px 0;border-bottom:1px solid #e2e8f0;line-height:1.4"><strong>${i.lbl}:</strong> ${i.txt}</div>`
+    ).join('');
+    html = `
+      <div style="border-radius:var(--radius) var(--radius) 0 0;background:linear-gradient(160deg,${node.color},${node.gt});padding:14px 16px;color:white;position:relative;overflow:hidden">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.65;margin-bottom:5px">Tratamiento Recomendado</div>
+        <div style="font-size:15px;font-weight:800;line-height:1.3">${node.title}</div>
+        <div style="font-size:11px;opacity:.8;margin-top:4px;background:rgba(0,0,0,.15);border-radius:6px;padding:4px 8px;display:inline-block">Ambulatorio</div>
+        <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+      </div>
+      <div class="treatment-body" style="border-radius:0 0 var(--radius) var(--radius)">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:var(--radius-sm);padding:9px 11px;margin-bottom:10px">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.4px;margin-bottom:5px">Gérmenes probables</div>
+          ${orgsHTML}
+        </div>
+        ${regsHTML}
+        <div class="duration-box" style="margin-top:8px">
+          <h4>⏱️ Duración</h4>
+          <p>${node.duration}</p>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:var(--radius-sm);padding:9px 11px;margin-top:8px">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#166534;letter-spacing:.4px;margin-bottom:5px">Equipo multidisciplinario</div>
+          ${interdHTML}
+        </div>
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="pieGoBack()">← Volver</button>
+        <button class="btn-back" onclick="pieRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  /* ── MODERADA / GRAVE (pie_mod_tx) ──────── */
+  else if (node.type === 'pie_mod_tx') {
+    const orgsHTML = node.organisms.map(o => `<div style="font-size:11.5px;color:#1e293b;line-height:1.5;margin-bottom:3px">• ${o}</div>`).join('');
+    const cultHTML = node.cultivos.map(c => `<div style="font-size:11px;color:#0c4a6e;line-height:1.4;margin-bottom:2px">• ${c}</div>`).join('');
+
+    const makeCard = (card, idx) => {
+      const regiHTML = card.regimens.map(r =>
+        `<div class="regimen-block" style="background:${r.bg};margin-bottom:7px">
+          <div class="regimen-label" style="color:${r.lc}">${r.label}</div>
+          ${r.lines.map(l=>`<div class="drug-line">${l}</div>`).join('')}
+        </div>`).join('');
+      return `
+        <div style="perspective:1000px;cursor:pointer;margin-bottom:10px" onclick="pieFlip(${idx})">
+          <div id="pie-flip-${idx}" style="position:relative;width:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)">
+            <div style="backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1.5px solid ${card.gf};border-radius:10px;overflow:hidden;display:flex;flex-direction:column">
+              <div style="background:linear-gradient(160deg,${card.gf},${card.gt});color:white;padding:7px 11px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden">
+                <span>${card.frontTitle}</span>
+                <span style="font-size:16px;opacity:.9">↺</span>
+                <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 100%);pointer-events:none"></div>
+              </div>
+              <div style="background:white;padding:9px 11px;flex:1">
+                <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.3px;margin-bottom:5px">Gérmenes a Cubrir</div>
+                ${orgsHTML}
+              </div>
+              <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:6px 11px;font-size:10.5px;color:#475569;font-weight:700;text-align:center">
+                ↺ Girar para ver el tratamiento antibiótico
+              </div>
+            </div>
+            <div id="pie-flip-back-${idx}" style="position:absolute;top:0;left:0;width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);-webkit-transform:rotateY(180deg);border:1.5px solid ${card.gf};border-radius:10px;overflow:hidden">
+              <div style="background:linear-gradient(160deg,${card.gf},${card.gt});color:white;padding:7px 11px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;justify-content:space-between;position:relative;overflow:hidden">
+                <span>${card.frontTitle} — Tratamiento</span>
+                <span style="font-size:16px;opacity:.9">↺</span>
+                <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 100%);pointer-events:none"></div>
+              </div>
+              <div style="background:white;padding:9px 11px">${regiHTML}</div>
+            </div>
+          </div>
+        </div>`;
+    };
+
+    const cardsHTML = node.singleCard
+      ? makeCard(node.treatment, 0)
+      : node.cards.map((c, i) => makeCard(c, i)).join('');
+
+    const m = node.monitoring;
+    const monSection = s => `
+      <div style="margin-bottom:8px">
+        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.4px;margin-bottom:4px">${s.title}</div>
+        ${s.items.map(it=>`<div style="font-size:11.5px;color:#475569;line-height:1.5;margin-bottom:3px">• ${it}</div>`).join('')}
+      </div>`;
+
+    html = `
+      <div style="border-radius:var(--radius) var(--radius) 0 0;background:linear-gradient(160deg,${node.color},${node.gt});padding:12px 16px;color:white;position:relative;overflow:hidden;margin-bottom:10px">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.65;margin-bottom:3px">Infección ${node.title}</div>
+        <div style="font-size:14px;font-weight:800;line-height:1.3">${node.setting}</div>
+        <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+      </div>
+
+      <div style="border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:10px">
+        <div style="background:linear-gradient(160deg,#0ea5e9,#0891b2);color:white;padding:9px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;position:relative;overflow:hidden">
+          🔬 Cultivos recomendados
+          <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+        </div>
+        <div style="background:white;padding:10px 14px;border:1px solid #bae6fd;border-top:none;border-radius:0 0 var(--radius) var(--radius)">${cultHTML}</div>
+      </div>
+
+      ${cardsHTML}
+
+      <div style="border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:10px">
+        <div style="background:linear-gradient(160deg,#334155,#1e293b);color:white;padding:9px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;position:relative;overflow:hidden">
+          ⏱️ ${m.header}
+          <div style="font-size:10px;font-weight:400;opacity:.7;margin-top:2px;text-transform:none;letter-spacing:0">${m.headerSub}</div>
+          <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
+        </div>
+        <div style="background:white;padding:11px 14px;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 var(--radius) var(--radius)">
+          ${monSection(m.sinOsteo)}
+          ${monSection(m.conOsteo)}
+          <div style="padding-top:8px;border-top:1px solid #e2e8f0">
+            ${monSection(m.urgente)}
+            ${monSection(m.seguimiento)}
+          </div>
+        </div>
+      </div>
+
+      <div class="choices" style="margin-top:4px">
+        <button class="btn-back" onclick="pieGoBack()">← Volver</button>
+        <button class="btn-back" onclick="pieRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('pie-flow-body');
+  body.innerHTML = html;
+  window.scrollTo(0, 0);
+  updateMinimapPIE(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   PIE TABLES
+═══════════════════════════════════════════════ */
+function showTablesPIE(idx) {
+  document.getElementById('pie-tables-back-btn').onclick = () => showScreen('pie');
+  showScreen('pie-tables');
+  renderPIETablesUI(idx || 0);
+}
+
+function renderPIETablesUI(idx) {
+  pie_activeTabIndex = idx;
+  document.getElementById('pie-tabs-bar').innerHTML = PIE_TABLES.map((t,i) =>
+    `<button class="tab-btn${i===idx?' active':''}" onclick="pieSwipeToTable(${i})">${t.label}</button>`
+  ).join('');
+
+  const cardsHTML = PIE_TABLES.map((t, i) => {
+    let inner = '';
+
+    if (t.type === 'pie_double') {
+      const makeList = side =>
+        side.rows.map(r => `<div style="font-size:11px;color:#1e293b;padding:4px 0;border-bottom:1px solid #e8f0f7;line-height:1.4">• ${r}</div>`).join('');
+      inner = `<div style="padding:10px 12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;background:${t.left.color};color:white;border-radius:6px;padding:4px 8px;margin-bottom:5px">${t.left.head}</div>
+            ${makeList(t.left)}
+            <div style="font-size:10px;font-weight:800;color:${t.left.noteColor};margin-top:5px;padding:3px 8px;background:${t.left.color}22;border-radius:5px">${t.left.note}</div>
+          </div>
+          <div>
+            <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;background:${t.right.color};color:white;border-radius:6px;padding:4px 8px;margin-bottom:5px">${t.right.head}</div>
+            ${makeList(t.right)}
+            <div style="font-size:10px;font-weight:800;color:${t.right.noteColor};margin-top:5px;padding:3px 8px;background:${t.right.color}22;border-radius:5px">${t.right.note}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    else if (t.type === 'pie_fr_mdr' || t.type === 'pie_int_dom') {
+      inner = `<div style="padding:10px 12px">
+        ${t.intro ? `<div style="font-size:11.5px;color:#475569;margin-bottom:8px;line-height:1.4">${t.intro}</div>` : ''}
+        ${t.sections.map(s => `
+          <div style="background:${s.bg};border-left:3px solid ${s.bc};border-radius:0 6px 6px 0;padding:8px 10px;margin-bottom:7px">
+            <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:${s.bc};letter-spacing:.3px;margin-bottom:4px">${s.head}</div>
+            ${s.items.map(it=>`<div style="font-size:11px;color:#1e293b;line-height:1.4;margin-bottom:2px">• ${it}</div>`).join('')}
+          </div>`).join('')}
+      </div>`;
+    }
+
+    else if (t.type === 'pie_simple') {
+      inner = `<div style="padding:10px 12px">
+        ${t.intro ? `<div style="font-size:11.5px;color:#475569;margin-bottom:8px;line-height:1.4">${t.intro}</div>` : ''}
+        ${t.items.map(it=>`<div style="font-size:11.5px;color:#1e293b;padding:5px 0;border-bottom:1px solid #e8f0f7;line-height:1.45">• ${it}</div>`).join('')}
+      </div>`;
+    }
+
+    else if (t.type === 'pie_duracion') {
+      inner = `<div style="padding:10px 12px">
+        <div style="background:#d1fae5;border-left:3px solid #059669;border-radius:0 6px 6px 0;padding:8px 10px;margin-bottom:10px">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#065f46;letter-spacing:.3px;margin-bottom:3px">${t.sinOsteo.label}</div>
+          <div style="font-size:13px;font-weight:800;color:#065f46;margin-bottom:3px">${t.sinOsteo.duration}</div>
+          <div style="font-size:11px;color:#047857;line-height:1.4">${t.sinOsteo.note}</div>
+        </div>
+        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;color:#334155;letter-spacing:.3px;margin-bottom:5px">Con osteomielitis</div>
+        ${t.conOsteo.map(r=>`
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 10px;margin-bottom:5px">
+            <div style="font-size:11px;color:#475569;line-height:1.4;margin-bottom:2px">${r.c}</div>
+            <div style="font-size:13px;font-weight:800;color:#1e293b">${r.d}</div>
+            ${r.note ? `<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">${r.note}</div>` : ''}
+          </div>`).join('')}
+        <div style="font-size:10.5px;color:#475569;font-style:italic;margin-top:4px">${t.conOsteoNote}</div>
+      </div>`;
+    }
+
+    return `<div class="table-swipe-card" id="pie-swipe-card-${i}" style="height:auto;min-height:0">
+      <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+        <div class="table-swipe-head">${t.title}</div>
+        ${inner}
+      </div>
+    </div>`;
+  }).join('');
+
+  const dotsHTML = PIE_TABLES.map((_,i) =>
+    `<div class="swipe-dot${i===idx?' active':''}" id="pie-swipe-dot-${i}" onclick="pieSwipeToTable(${i})"></div>`
+  ).join('');
+
+  document.getElementById('pie-tables-panels').innerHTML = `
+    <div class="tables-swipe-container" id="pie-tables-swipe" style="flex:1;align-items:start">${cardsHTML}</div>
+    <div class="swipe-dot-nav">${dotsHTML}</div>`;
+
+  requestAnimationFrame(() => {
+    const container = document.getElementById('pie-tables-swipe');
+    const card = document.getElementById('pie-swipe-card-' + idx);
+    if (container && card) container.scrollLeft = card.offsetLeft;
+    pieScrollTabIntoView(idx);
+
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.intersectionRatio >= 0.6) {
+          const j = parseInt(e.target.id.replace('pie-swipe-card-',''));
+          pie_activeTabIndex = j;
+          document.querySelectorAll('#pie-tabs-bar .tab-btn').forEach((b,k) => b.classList.toggle('active', k===j));
+          document.querySelectorAll('[id^="pie-swipe-dot-"]').forEach((d,k) => d.classList.toggle('active', k===j));
+          pieScrollTabIntoView(j);
+        }
+      });
+    }, { root: document.getElementById('pie-tables-swipe'), threshold: 0.6 });
+    PIE_TABLES.forEach((_,j) => { const c = document.getElementById('pie-swipe-card-'+j); if(c) obs.observe(c); });
+  });
+}
+
+function pieSwipeToTable(idx) {
+  const container = document.getElementById('pie-tables-swipe');
+  const card = document.getElementById('pie-swipe-card-' + idx);
+  if (container && card) { container.scrollTo({ left: card.offsetLeft, behavior: 'smooth' }); pie_activeTabIndex = idx; }
+}
+
+function pieScrollTabIntoView(i) {
+  const bar = document.getElementById('pie-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+/* ═════════════════════════════════════════════
    HOME
 ═══════════════════════════════════════════════ */
 function renderHome() {
@@ -1508,6 +1908,10 @@ function startGuide(id) {
     ppb_history = []; ppb_currentNode = 'ppb_start';
     showScreen('ppb');
     renderNodePPB('ppb_start');
+  } else if (id === 'pie') {
+    pie_history = []; pie_currentNode = 'pie_start';
+    showScreen('pie');
+    renderNodePIE('pie_start');
   }
 }
 
