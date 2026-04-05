@@ -990,3 +990,7 @@ body {
 .pie-flip-bar { padding: 7px 11px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(160deg,#1a7aaa,#0d5a84); color: white; border-radius: 8px 8px 0 0; position: relative; overflow: hidden; }
 .pie-flip-bar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 45%; background: linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 100%); pointer-events: none; }
 .pie-flip-content { background: white; padding: 10px 11px; border-radius: 0 0 8px 8px; }
+/* ── Inline icon buttons (ibtn) — usados dentro de tarjetas de tratamiento ── */
+.ibtn { display: inline-flex; align-items: center; gap: 4px; border-radius: 20px; padding: 3px 10px 3px 7px; font-size: 10.5px; font-weight: 700; cursor: pointer; font-family: inherit; vertical-align: middle; margin-top: 5px; border: 1.5px solid; line-height: 1.4; }
+.ibtn:hover { opacity: .8; }
+.dsm { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }

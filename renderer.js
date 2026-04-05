@@ -1592,7 +1592,7 @@ function renderNodePIE(nodeId) {
       <div class="step-card" style="padding:15px">
         <div style="background:linear-gradient(135deg,#b45309,#92400e);border-radius:var(--radius-sm);padding:11px 14px;text-align:center;color:white;margin-bottom:12px;position:relative;overflow:hidden">
           <div style="position:absolute;top:0;left:0;right:0;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%);pointer-events:none"></div>
-          <h2 style="font-size:16px;font-weight:800;letter-spacing:.3px;position:relative;z-index:1">INFECCIÓN EN PIE DIABÉTICO</h2>
+          <h2 style="font-size:16px;font-weight:800;letter-spacing:.3px;position:relative;z-index:1;color:white">INFECCIÓN EN PIE DIABÉTICO</h2>
           <p style="font-size:11px;opacity:.8;margin-top:3px;position:relative;z-index:1">Paciente con Diabetes Mellitus y sospecha de infección en pie</p>
         </div>
         <div style="font-size:12.5px;font-weight:700;color:#334155;margin-bottom:6px">Sospecha si presenta al menos 2 de:</div>
@@ -1638,7 +1638,7 @@ function renderNodePIE(nodeId) {
     html = `
       <div class="step-card" style="padding:12px">
         <div style="font-size:13px;font-weight:800;color:#1e293b;margin-bottom:10px">Clasificación de Severidad de la Infección</div>
-        <button class="btn-tables" onclick="showTablesPIE(0)">📋 Tabla 1 — Criterios SIRS y qSOFA</button>
+        <button class="btn-tables" onclick="showTablesPIE(0)" style="background:linear-gradient(160deg,#1a5472,#0d3a52);color:white;border-color:#0d3a52">📋 Tabla 1 — Criterios SIRS y qSOFA</button>
       </div>
       ${sevBlocks}
 
