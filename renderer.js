@@ -6,7 +6,7 @@ const GUIDES = [
   { id:'pa',       icon:'🔥', bg:'#fef9c3', name:'Pancreatitis Aguda',                                                          ok:true  },
   { id:'ppb',      icon:'🩹', bg:'#fef3c7', name:'Infección de Piel y Partes Blandas',                                          ok:true  },
   { id:'pie',      icon:'🦶', bg:'#fef3c7', name:'Infección en Pie Diabético',                                                  ok:true  },
-  { id:'nac',      icon:'🫁', bg:'#e0f2fe', name:'Neumonía Aguda',                                                              ok:false },
+  { id:'nac',      icon:'🫁', bg:'#e0f2fe', name:'Neumonía Aguda',                                                              ok:true  },
   { id:'nih',      icon:'🏥', bg:'#e0f2fe', name:'Neumonía Intrahospitalaria',                                                  ok:false },
   { id:'nav',      icon:'💨', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:false },
   { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:false },
@@ -290,6 +290,26 @@ const PA_JUMP_PATHS = {
 let pie_currentNode = 'pie_start';
 let pie_history     = [];
 let pie_activeTabIndex = 0;
+
+/* ── NAC STATE ── */
+let nac_currentNode = 'nac_start';
+let nac_history     = [];
+let nac_activeTabIndex = 0;
+const NAC_TOTAL_STEPS = 4;
+const NAC_MM_IDS = ['nac_start','nac_severity','nac_g1_route','nac_g2_route','nac_g3_route','nac_g1a','nac_g1b','nac_g2a','nac_g2b','nac_g3a','nac_g3b'];
+const NAC_JUMP_PATHS = {
+  'nac_start':    [],
+  'nac_severity': ['nac_start'],
+  'nac_g1_route': ['nac_start','nac_severity'],
+  'nac_g2_route': ['nac_start','nac_severity'],
+  'nac_g3_route': ['nac_start','nac_severity'],
+  'nac_g1a':      ['nac_start','nac_severity','nac_g1_route'],
+  'nac_g1b':      ['nac_start','nac_severity','nac_g1_route'],
+  'nac_g2a':      ['nac_start','nac_severity','nac_g2_route'],
+  'nac_g2b':      ['nac_start','nac_severity','nac_g2_route'],
+  'nac_g3a':      ['nac_start','nac_severity','nac_g3_route'],
+  'nac_g3b':      ['nac_start','nac_severity','nac_g3_route'],
+};
 
 /* ═════════════════════════════════════════════
    PANCREATITIS AGUDA — NAV
@@ -1954,6 +1974,445 @@ function pieScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   NEUMONÍA AGUDA — NAV
+═══════════════════════════════════════════════ */
+function nacGoBack() {
+  if (nac_history.length > 0) {
+    nac_currentNode = nac_history.pop();
+    renderNodeNAC(nac_currentNode);
+  } else { goHome(); }
+}
+function nacNavigate(nodeId) {
+  nac_history.push(nac_currentNode);
+  nac_currentNode = nodeId;
+  renderNodeNAC(nodeId);
+}
+function nacRestart() {
+  nac_history = [];
+  nac_currentNode = 'nac_start';
+  renderNodeNAC('nac_start');
+}
+function nacJumpTo(id) {
+  if (id === nac_currentNode) return;
+  if (NAC_JUMP_PATHS[id] !== undefined) {
+    nac_history = [...NAC_JUMP_PATHS[id]];
+    nac_currentNode = id;
+    renderNodeNAC(id);
+  }
+}
+function toggleMinimapNAC() {
+  const panel = document.getElementById('nac-minimap-panel');
+  const btn   = document.getElementById('nac-minimap-arrow-btn');
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapNAC(nodeId) {
+  NAC_MM_IDS.forEach(id => {
+    const rect = document.getElementById('nac-mm-' + id);
+    const txt  = document.getElementById('nac-mmt-' + id);
+    if (!rect) return;
+    const isCurrent = id === nodeId;
+    const isVisited = nac_history.includes(id);
+    rect.setAttribute('fill',
+      isCurrent ? '#f59e0b' :
+      isVisited ? 'rgba(255,255,255,.28)' :
+      'rgba(255,255,255,.1)'
+    );
+    rect.setAttribute('stroke', isCurrent ? '#fbbf24' : 'none');
+    rect.setAttribute('stroke-width', isCurrent ? '2' : '0');
+    if (txt) txt.setAttribute('fill',
+      isCurrent ? '#1e293b' :
+      isVisited ? 'rgba(255,255,255,.85)' :
+      'rgba(255,255,255,.45)'
+    );
+  });
+}
+
+/* ═════════════════════════════════════════════
+   NEUMONÍA AGUDA — RENDER
+═══════════════════════════════════════════════ */
+function renderNodeNAC(nodeId) {
+  const node = NODES_NAC[nodeId];
+  if (!node) return;
+
+  const pct  = Math.round(((node.step - 1) / NAC_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('nac-progress-fill');
+  const ptxt = document.getElementById('nac-progress-txt');
+  const path = document.getElementById('nac-path-txt');
+  const sub  = document.getElementById('nac-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (ptxt) ptxt.textContent = '';
+  if (path) path.textContent = nac_history.length > 0 ? `${nac_history.length} paso${nac_history.length > 1 ? 's' : ''} atrás` : '';
+
+  const sublabels = {
+    nac_start: 'Sospecha y diagnóstico',
+    nac_severity: 'Gravedad e internación',
+    nac_g1_route: 'Grupo 1',
+    nac_g2_route: 'Grupo 2',
+    nac_g3_route: 'Grupo 3',
+    nac_g1a: 'Tratamiento ambulatorio',
+    nac_g1b: 'Tratamiento ambulatorio',
+    nac_g2a: 'Cuidados moderados',
+    nac_g2b: 'Cuidados moderados · FR MDR',
+    nac_g3a: 'Cuidados críticos',
+    nac_g3b: 'Cuidados críticos · FR MDR',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || '';
+
+  let html = '';
+
+  if (node.type === 'nac_start') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+      </div>
+    `).join('');
+
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0ea5b7 0%,#0d7488 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:4px;text-transform:uppercase;letter-spacing:.8px">${node.subtitle}</div>
+        </div>
+        ${sectionsHTML}
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;text-align:center">
+          <div style="font-size:18px;font-weight:800;line-height:1.25;color:#0d3a52;letter-spacing:.2px">
+            ${node.conclusion}
+          </div>
+        </div>
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="nacNavigate('${node.next}')">
+          <div class="tri"></div>
+          <span></span>
+        </button>
+      </div>`;
+  }
+
+  else if (node.type === 'nac_severity') {
+    html = `
+      <div class="step-card">
+        <div style="display:flex;justify-content:center">
+          <div class="step-badge" style="background:#e0f2fe;color:#0c4a6e;font-size:12px;padding:6px 12px;letter-spacing:.2px;white-space:nowrap;text-align:center">${node.badgeText}</div>
+        </div>
+        <button class="btn-tables" onclick="showTablesNAC(0)" style="margin-top:4px">📋 Ver scores y criterios de internación</button>
+      </div>
+      <div class="choices">
+        ${node.groups.map(g => `
+          <button class="choice-btn" style="border-color:${g.border};background:${g.bg}" onclick="nacNavigate('${g.next}')">
+            <div class="choice-icon" style="background:${g.border}">${g.icon}</div>
+            <div class="choice-text">
+              <strong style="color:${g.text}">${g.title}</strong>
+              <small style="color:${g.text};opacity:.9">${g.score}</small>
+              <small>${g.desc}</small>
+              ${g.extra ? `<small style="font-weight:800;letter-spacing:.2px">${g.extra}</small>` : ''}
+            </div>
+            <span class="choice-arrow" style="color:${g.border}">›</span>
+          </button>
+        `).join('')}
+        <button class="btn-back" onclick="nacGoBack()">← Volver</button>
+      </div>`;
+  }
+
+  else if (node.type === 'nac_split') {
+    html = `
+      <div class="step-card">
+        <h2>${node.title}</h2>
+        <p class="sub">${node.subtitle || ''}${node.subtitleActionLabel ? ` <button onclick="event.stopPropagation();showTablesNAC(1)" class="ibtn" style="background:#fef3c7;border-color:#d97706;color:#92400e;font-size:10px;padding:2px 8px;margin-top:0;vertical-align:middle">${node.subtitleActionLabel}</button>` : ''}</p>
+        ${node.noteLines ? `<div class="note-box" style="margin-top:12px">${node.noteLines.map(line => `<div style="margin-bottom:4px">${line}</div>`).join('')}</div>` : (node.note ? `<div class="note-box" style="margin-top:12px">${node.note}</div>` : '')}
+        ${node.sharedFooter ? `
+          <div class="note-box" style="margin-top:12px;${node.title.includes('Grupo 2') ? 'background:#fef3c7;border-left:3px solid #d97706;color:#78350f' : node.title.includes('Grupo 3') ? 'background:#fee2e2;border-left:3px solid #dc2626;color:#7f1d1d' : ''}">
+            ${node.sharedFooterTitle ? `<div style="font-weight:800;margin-bottom:6px">${node.sharedFooterTitle}</div>` : ''}
+            ${node.sharedFooter.map(item => `<div style="margin-bottom:4px">• ${item}</div>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${node.color};background:white" onclick="nacNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${node.color}">${node.title.includes('1') ? '💊' : node.title.includes('2') ? '🩺' : '🚑'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${node.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${node.color}">${opt.tag}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${node.color}">›</div>
+          </button>
+        `).join('')}
+        ${node.commonInfo ? `
+          <div style="border-radius:10px;overflow:hidden;border:1px solid #93c5fd">
+            <div style="background:linear-gradient(160deg,#4a9fd4 0%,#3a8dc4 100%);color:white;padding:8px 11px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px">${node.commonInfoTitle || 'Considerar'}</div>
+            <div style="background:#eff6ff;padding:10px 11px">
+              ${node.commonInfo.map(item => `<div style="font-size:11.5px;color:#1e293b;line-height:1.45;margin-bottom:5px">• ${item}</div>`).join('')}
+            </div>
+          </div>
+        ` : ''}
+        ${node.title.includes('Grupo 1') ? `<button class="btn-tables" onclick="showTablesNAC(0)">📋 Comorbilidades a considerar</button>` : ''}
+        ${node.hideResistanceButton ? '' : `<button class="btn-tables" onclick="showTablesNAC(1)">📋 Ver FR para microorganismos resistentes</button>`}
+        <button class="btn-back" onclick="nacGoBack()">← Volver</button>
+      </div>`;
+  }
+
+  else if (node.type === 'nac_treatment') {
+    const titleHTML = nodeId === 'nac_g1a'
+      ? `Grupo 1a < 65 años · Sin comorbilidades · Sin <button onclick="event.stopPropagation();showTablesNAC(1)" class="ibtn" style="background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.38);color:white;font-size:11px;padding:3px 10px;margin-top:0;vertical-align:middle;position:relative;top:-1px">FR MDR</button>`
+      : nodeId === 'nac_g1b'
+      ? `Grupo 1b: ≥ 65 años, SIN comorbilidades o < 65 años, CON comorbilidades compensadas, SIN <button onclick="event.stopPropagation();showTablesNAC(1)" class="ibtn" style="background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.38);color:white;font-size:11px;padding:3px 10px;margin-top:0;vertical-align:middle;position:relative;top:-1px">FR MDR</button>`
+      : node.title;
+
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        ${node.txLabelHidden ? '' : `<div class="tx-label">Tratamiento empírico</div>`}
+        <h2>${titleHTML}</h2>
+        ${node.subtitle ? `<p style="${node.subtitleAsLabel ? 'font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-top:6px' : ''}">${node.subtitle}</p>` : ''}
+      </div>
+      <div class="treatment-body">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:${node.settingColor};color:${node.settingText};font-size:11px;font-weight:800;padding:5px 10px;border-radius:999px;margin-bottom:12px">
+          🏥 ${node.setting}
+        </div>
+
+        ${node.prelude && node.prelude.length ? `
+          <div class="note-box" style="margin-bottom:12px">
+            ${node.prelude.map(i => `<div style="margin-bottom:4px">${i}</div>`).join('')}
+          </div>
+        ` : ''}
+
+        ${node.regimens.map(r => `
+          <div class="regimen-block" style="background:${r.bg}">
+            <div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>
+            ${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}
+          </div>
+        `).join('')}
+
+        ${node.duration ? `
+          <div class="duration-box">
+            <h4>Duración orientativa</h4>
+            <p>${node.duration}</p>
+          </div>
+        ` : ''}
+
+        ${node.note ? `<div class="note-box" style="margin-top:10px">${node.note}</div>` : ''}
+
+        <div class="divider"></div>
+        ${nodeId === 'nac_g1a' || nodeId === 'nac_g1b' || node.hideResistanceButton ? '' : `<button class="btn-tables" onclick="showTablesNAC(1)">📋 FR de resistencia</button>`}
+        <button class="btn-tables" onclick="showTablesNAC(2)" style="margin-top:8px">📋 Alergia a β-lactámicos</button>
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="nacGoBack()">← Volver</button>
+        <button class="btn-back" onclick="nacRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('nac-flow-body');
+  body.innerHTML = html;
+  window.scrollTo(0,0);
+  updateMinimapNAC(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   NAC TABLES
+═══════════════════════════════════════════════ */
+function showTablesNAC(idx) {
+  document.getElementById('nac-tables-back-btn').onclick = () => showScreen('nac');
+  showScreen('nac-tables');
+  renderNACTablesUI(idx || 0);
+}
+
+function renderNACTablesUI(idx) {
+  nac_activeTabIndex = idx;
+  document.getElementById('nac-tabs-bar').innerHTML = NAC_TABLES.map((t, i) =>
+    `<button class="tab-btn${i===idx?' active':''}" onclick="nacSwipeToTable(${i})">${t.label}</button>`
+  ).join('');
+
+  const cardsHTML = NAC_TABLES.map((t, i) => {
+    const headStyle = t.id === 'nac_mdr'
+      ? 'background:linear-gradient(160deg,#ef4444 0%,#dc2626 100%);color:white;padding:10px 13px;font-size:12px;font-weight:800;position:relative;overflow:hidden'
+      : 'background:linear-gradient(160deg, #4a9fd4 0%, #3a8dc4 100%);color:white;padding:10px 13px;font-size:12px;font-weight:800;position:relative;overflow:hidden';
+
+    if (t.type === 'allergy_grid') {
+      const toneStyles = {
+        green: { bg:'#f0fdf4', br:'#86efac', hd:'#166534', ac:'#14532d' },
+        amber: { bg:'#fffbeb', br:'#fcd34d', hd:'#92400e', ac:'#78350f' },
+        red:   { bg:'#fef2f2', br:'#fca5a5', hd:'#991b1b', ac:'#7f1d1d' },
+      };
+      const allergyCols = t.sections.map(s => {
+        const tone = toneStyles[s.tone] || toneStyles.green;
+        return `
+          <div style="background:${tone.bg};border:1px solid ${tone.br};border-radius:10px;overflow:hidden">
+            <div style="background:${tone.br};color:${tone.hd};padding:8px 10px;font-size:11px;font-weight:800">${s.head}</div>
+            <div style="padding:10px">
+              <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:${tone.hd};margin-bottom:6px">Historia / patrón clínico</div>
+              ${s.history.map(item => `<div style="font-size:11.5px;color:#1f2937;line-height:1.45;margin-bottom:5px">• ${item}</div>`).join('')}
+              <div style="margin-top:10px;padding-top:8px;border-top:1px solid ${tone.br}">
+                <div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;color:${tone.ac};margin-bottom:6px">Acción</div>
+                ${s.action.map(item => `<div style="font-size:11.5px;color:${tone.ac};line-height:1.45;margin-bottom:5px;font-weight:700">• ${item}</div>`).join('')}
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+      return `
+        <div class="table-swipe-card" id="nac-swipe-card-${i}">
+          <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+            <div class="table-swipe-head" style="${headStyle}">${t.title}</div>
+            <div style="padding:10px;display:grid;grid-template-columns:1fr;gap:10px">
+              ${allergyCols}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    const sectionsHTML = t.sections.map(s => `
+      <div style="padding:10px 11px;border-bottom:1px solid ${t.id === 'nac_mdr' ? '#fecaca' : '#e8f0f7'};${t.id === 'nac_mdr' ? 'background:#fff5f5;' : ''}">
+        ${!(t.id === 'nac_mdr' && s.head === 'FR para anaerobios') ? `<div style="font-size:11px;font-weight:800;color:${t.id === 'nac_mdr' ? '#b91c1c' : '#0c4a6e'};text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>` : ''}
+        ${s.table ? `
+          <table class="tbl" style="margin-top:4px">
+            <thead>
+              <tr>
+                ${s.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${s.table.rows.map(r => `
+                <tr>
+                  ${r.map((cell, idx) => `<td style="font-size:11.5px;${idx===2?'font-weight:600;color:#334155;':''}">${cell}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <div class="tbl-note" style="margin:8px 0 0;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <span>${s.table.note}</span>
+            ${s.calcButton ? `<button class="ibtn" onclick="openNACPsiCalculator()" style="background:#e0f2fe;border-color:#0891b2;color:#0c4a6e;margin-top:0;flex-shrink:0"><span class="dsm" style="background:#0891b2"></span>${s.calcButton}</button>` : ''}
+          </div>
+        ` : (t.id === 'nac_mdr' && s.head === 'FR para anaerobios'
+            ? `
+              <div style="font-size:12px;color:#3f3f46;line-height:1.45;margin-bottom:4px"><strong style="color:#b91c1c;text-transform:uppercase">${s.head}:</strong> <strong>${s.items[0]}</strong></div>
+              ${s.items.slice(1).map(item => `<div style="font-size:12px;color:#3f3f46;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+            `
+            : s.items.map(item => `<div style="font-size:12px;color:${t.id === 'nac_mdr' ? '#3f3f46' : '#1e293b'};line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')
+          )}
+      </div>
+    `).join('');
+
+    return `
+      <div class="table-swipe-card" id="nac-swipe-card-${i}">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+          <div class="table-swipe-head" style="${headStyle}">${t.title}</div>
+          ${sectionsHTML}
+        </div>
+      </div>`;
+  }).join('');
+
+  const dotsHTML = NAC_TABLES.map((_,i) =>
+    `<div class="swipe-dot${i===idx?' active':''}" onclick="nacSwipeToTable(${i})"></div>`
+  ).join('');
+
+  document.getElementById('nac-tables-panels').innerHTML = `
+    <div class="tables-swipe-container" id="nac-tables-swipe">${cardsHTML}</div>
+    <div class="swipe-dot-nav">${dotsHTML}</div>`;
+
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('nac-tables-swipe');
+    if (!scroller) return;
+    const cardWidth = scroller.clientWidth;
+    scroller.scrollLeft = idx * cardWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== nac_activeTabIndex) {
+          nac_activeTabIndex = active;
+          document.querySelectorAll('#nac-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===active));
+          document.querySelectorAll('#screen-nac-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===active));
+          nacScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+
+function nacSwipeToTable(i) {
+  nac_activeTabIndex = i;
+  document.querySelectorAll('#nac-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===i));
+  document.querySelectorAll('#screen-nac-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===i));
+  const scroller = document.getElementById('nac-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  nacScrollTabIntoView(i);
+}
+
+function nacScrollTabIntoView(i) {
+  const bar = document.getElementById('nac-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+/* ═════════════════════════════════════════════
+   NAC PSI CALCULATOR
+═══════════════════════════════════════════════ */
+function openNACPsiCalculator() {
+  const m = document.getElementById('modal-nac-psi');
+  if (m) { m.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+}
+function closeNACPsiCalculator() {
+  const m = document.getElementById('modal-nac-psi');
+  if (m) { m.style.display = 'none'; document.body.style.overflow = ''; }
+}
+function calculateNACPsi() {
+  const num = id => {
+    const el = document.getElementById(id);
+    return el ? parseFloat(el.value || '0') : 0;
+  };
+  const checked = id => {
+    const el = document.getElementById(id);
+    return !!(el && el.checked);
+  };
+  const sex = document.getElementById('nac-psi-sex')?.value || 'male';
+  const age = num('nac-psi-age');
+  let score = sex === 'female' ? Math.max(age - 10, 0) : age;
+  if (checked('nac-psi-nursing')) score += 10;
+  if (checked('nac-psi-neoplastic')) score += 30;
+  if (checked('nac-psi-liver')) score += 20;
+  if (checked('nac-psi-chf')) score += 10;
+  if (checked('nac-psi-cva')) score += 10;
+  if (checked('nac-psi-renal')) score += 10;
+  if (checked('nac-psi-confusion')) score += 20;
+  if (num('nac-psi-rr') >= 30) score += 20;
+  if (num('nac-psi-sbp') < 90) score += 20;
+  const temp = num('nac-psi-temp');
+  if (temp < 35 || temp >= 40) score += 15;
+  if (num('nac-psi-pulse') >= 125) score += 10;
+  if (num('nac-psi-ph') < 7.35) score += 30;
+  if (num('nac-psi-bun') >= 30) score += 20;
+  if (num('nac-psi-sodium') < 130) score += 20;
+  if (num('nac-psi-glucose') >= 250) score += 10;
+  if (num('nac-psi-hct') < 30) score += 10;
+  if (num('nac-psi-pao2') < 60) score += 10;
+  if (checked('nac-psi-effusion')) score += 10;
+  let psiClass = 'Clase I';
+  let plan = 'Tratamiento extrahospitalario';
+  if (score > 130) {
+    psiClass = 'Clase V'; plan = 'Ingreso hospitalario';
+  } else if (score >= 91) {
+    psiClass = 'Clase IV'; plan = 'Ingreso hospitalario';
+  } else if (score >= 71) {
+    psiClass = 'Clase III'; plan = 'Valoración en Urgencias';
+  } else if (score >= 51) {
+    psiClass = 'Clase II'; plan = 'Tratamiento extrahospitalario';
+  }
+  const result = document.getElementById('nac-psi-result');
+  const scoreEl = document.getElementById('nac-psi-score');
+  const classEl = document.getElementById('nac-psi-class');
+  const planEl  = document.getElementById('nac-psi-plan');
+  if (result) result.style.display = 'block';
+  if (scoreEl) scoreEl.textContent = `Puntaje total: ${Math.round(score)} puntos`;
+  if (classEl) classEl.textContent = `${psiClass}`;
+  if (planEl)  planEl.textContent  = `Conducta sugerida: ${plan}.`;
+}
+
+/* ═════════════════════════════════════════════
    HOME
 ═══════════════════════════════════════════════ */
 function renderHome() {
@@ -2003,6 +2462,10 @@ function startGuide(id) {
     pie_history = []; pie_currentNode = 'pie_start';
     showScreen('pie');
     renderNodePIE('pie_start');
+  } else if (id === 'nac') {
+    nac_history = []; nac_currentNode = 'nac_start';
+    showScreen('nac');
+    renderNodeNAC('nac_start');
   }
 }
 
