@@ -655,6 +655,85 @@
   </div>
 
 
+  <!-- ═══ NIH FLOWCHART ═══ -->
+  <div id="screen-nih" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="header-title">
+          <h1>Neumonía Intrahospitalaria</h1>
+          <p id="nih-step-sublabel">Evaluación inicial</p>
+        </div>
+        <button class="proa-pill" onclick="showTablesNIH(0)">Tablas</button>
+      </div>
+      <div class="minimap-panel" id="nih-minimap-panel">
+        <svg id="nih-minimap-svg" viewBox="0 0 330 126" width="100%" style="display:block;overflow:visible">
+          <defs>
+            <marker id="arr-nih" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+              <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
+            </marker>
+          </defs>
+          <line x1="165" y1="25" x2="165" y2="35" stroke="rgba(255,255,255,.25)" stroke-width="1.5" marker-end="url(#arr-nih)"/>
+          <line x1="165" y1="55" x2="165" y2="62" stroke="rgba(255,255,255,.22)" stroke-width="1.3"/>
+          <line x1="75" y1="62" x2="275" y2="62" stroke="rgba(255,255,255,.22)" stroke-width="1.3"/>
+          <line x1="75" y1="62" x2="75" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-nih)"/>
+          <line x1="169" y1="62" x2="169" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-nih)"/>
+          <line x1="275" y1="62" x2="275" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-nih)"/>
+          <line x1="75" y1="88" x2="75" y2="95" stroke="rgba(255,255,255,.18)" stroke-width="1.2"/>
+          <line x1="58" y1="95" x2="142" y2="95" stroke="rgba(255,255,255,.18)" stroke-width="1.2"/>
+          <line x1="58" y1="95" x2="58" y2="102" stroke="rgba(255,255,255,.18)" stroke-width="1.2" marker-end="url(#arr-nih)"/>
+          <line x1="142" y1="95" x2="142" y2="102" stroke="rgba(255,255,255,.18)" stroke-width="1.2" marker-end="url(#arr-nih)"/>
+          <rect id="nih-mm-nih_start" x="105" y="5" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="nihJumpTo('nih_start')"/>
+          <text id="nih-mmt-nih_start" x="165" y="18" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="8.5" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">NIH</text>
+          <rect id="nih-mm-nih_qsofa" x="105" y="35" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="nihJumpTo('nih_qsofa')"/>
+          <text id="nih-mmt-nih_qsofa" x="165" y="48" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="8.5" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">qSOFA</text>
+          <rect id="nih-mm-nih_q0_route" x="20" y="68" width="110" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="nihJumpTo('nih_q0_route')"/>
+          <text id="nih-mmt-nih_q0_route" x="75" y="81" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.5" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">qSOFA 0–1</text>
+          <rect id="nih-mm-nih_severe_early" x="134" y="68" width="70" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="nihJumpTo('nih_severe_early')"/>
+          <text id="nih-mmt-nih_severe_early" x="169" y="81" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.2" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">qSOFA ≥ 2</text>
+          <rect id="nih-mm-nih_severe_mdr" x="214" y="68" width="122" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="nihJumpTo('nih_severe_mdr')"/>
+          <text id="nih-mmt-nih_severe_mdr" x="275" y="81" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Shock séptico / IR severa</text>
+          <rect id="nih-mm-nih_low_early" x="23" y="102" width="70" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="nihJumpTo('nih_low_early')"/>
+          <text id="nih-mmt-nih_low_early" x="58" y="114" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">0–1 / &lt;5d</text>
+          <rect id="nih-mm-nih_low_mdr" x="107" y="102" width="70" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="nihJumpTo('nih_low_mdr')"/>
+          <text id="nih-mmt-nih_low_mdr" x="142" y="114" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">0–1 / MDR</text>
+        </svg>
+      </div>
+      <div style="display:flex;justify-content:center;padding:2px 0 4px">
+        <button id="nih-minimap-arrow-btn" onclick="toggleMinimapNIH()"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+                 color:rgba(255,255,255,.7);border-radius:20px;padding:3px 16px;
+                 font-size:13px;cursor:pointer;line-height:1;transition:background .15s;font-family:inherit">▼</button>
+      </div>
+      <div class="flow-progress">
+        <div class="progress-track"><div class="progress-fill" id="nih-progress-fill" style="width:0%"></div></div>
+        <div class="progress-info"><span id="nih-progress-txt"></span><span id="nih-path-txt"></span></div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="screen-scroll">
+      <div class="flow-body" id="nih-flow-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══ NIH TABLES ═══ -->
+  <div id="screen-nih-tables" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" id="nih-tables-back-btn">←</button>
+        <div class="header-title">
+          <h1>Tablas de Referencia</h1>
+          <p>Neumonía Intrahospitalaria · G-6</p>
+        </div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="tabs-bar" id="nih-tabs-bar"></div>
+    <div class="screen-scroll" style="overflow:hidden;display:flex;flex-direction:column;flex:1">
+      <div id="nih-tables-panels" style="display:flex;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+
   <!-- ═══ NAC FLOWCHART ═══ -->
   <div id="screen-nac" class="screen">
     <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
@@ -863,6 +942,7 @@
 <script src="flowcharts/pa.js"></script>
 <script src="flowcharts/pie.js"></script>
 <script src="flowcharts/nac.js"></script>
+<script src="flowcharts/nih.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>

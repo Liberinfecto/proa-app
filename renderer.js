@@ -7,7 +7,7 @@ const GUIDES = [
   { id:'ppb',      icon:'🩹', bg:'#fef3c7', name:'Infección de Piel y Partes Blandas',                                          ok:true  },
   { id:'pie',      icon:'🦶', bg:'#fef3c7', name:'Infección en Pie Diabético',                                                  ok:true  },
   { id:'nac',      icon:'🫁', bg:'#e0f2fe', name:'Neumonía Aguda',                                                              ok:true  },
-  { id:'nih',      icon:'🏥', bg:'#e0f2fe', name:'Neumonía Intrahospitalaria',                                                  ok:false },
+  { id:'nih',      icon:'🏥', bg:'#e0f2fe', name:'Neumonía Intrahospitalaria',                                                  ok:true  },
   { id:'nav',      icon:'💨', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:false },
   { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:false },
   { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:false },
@@ -290,6 +290,22 @@ const PA_JUMP_PATHS = {
 let pie_currentNode = 'pie_start';
 let pie_history     = [];
 let pie_activeTabIndex = 0;
+
+/* ── NIH STATE ── */
+let nih_currentNode = 'nih_start';
+let nih_history     = [];
+let nih_activeTabIndex = 0;
+const NIH_TOTAL_STEPS = 4;
+const NIH_MM_IDS = ['nih_start','nih_qsofa','nih_q0_route','nih_low_early','nih_low_mdr','nih_severe_early','nih_severe_mdr'];
+const NIH_JUMP_PATHS = {
+  'nih_start':        [],
+  'nih_qsofa':        ['nih_start'],
+  'nih_q0_route':     ['nih_start','nih_qsofa'],
+  'nih_low_early':    ['nih_start','nih_qsofa','nih_q0_route'],
+  'nih_low_mdr':      ['nih_start','nih_qsofa','nih_q0_route'],
+  'nih_severe_early': ['nih_start','nih_qsofa'],
+  'nih_severe_mdr':   ['nih_start','nih_qsofa'],
+};
 
 /* ── NAC STATE ── */
 let nac_currentNode = 'nac_start';
@@ -1974,6 +1990,420 @@ function pieScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   NEUMONÍA INTRAHOSPITALARIA — NAV
+═══════════════════════════════════════════════ */
+function nihGoBack() {
+  if (nih_history.length > 0) {
+    nih_currentNode = nih_history.pop();
+    renderNodeNIH(nih_currentNode);
+  } else { goHome(); }
+}
+function nihNavigate(nodeId) {
+  nih_history.push(nih_currentNode);
+  nih_currentNode = nodeId;
+  renderNodeNIH(nodeId);
+}
+function nihRestart() {
+  nih_history = [];
+  nih_currentNode = 'nih_start';
+  renderNodeNIH('nih_start');
+}
+function nihJumpTo(id) {
+  if (id === nih_currentNode) return;
+  if (NIH_JUMP_PATHS[id] !== undefined) {
+    nih_history = [...NIH_JUMP_PATHS[id]];
+    nih_currentNode = id;
+    renderNodeNIH(id);
+  }
+}
+function toggleMinimapNIH() {
+  const panel = document.getElementById('nih-minimap-panel');
+  const btn   = document.getElementById('nih-minimap-arrow-btn');
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapNIH(nodeId) {
+  NIH_MM_IDS.forEach(id => {
+    const rect = document.getElementById('nih-mm-' + id);
+    const txt  = document.getElementById('nih-mmt-' + id);
+    if (!rect) return;
+    const isCurrent = id === nodeId;
+    const isVisited = nih_history.includes(id);
+    rect.setAttribute('fill',
+      isCurrent ? '#f59e0b' :
+      isVisited ? 'rgba(255,255,255,.28)' :
+      'rgba(255,255,255,.1)'
+    );
+    rect.setAttribute('stroke', isCurrent ? '#fbbf24' : 'none');
+    rect.setAttribute('stroke-width', isCurrent ? '2' : '0');
+    if (txt) txt.setAttribute('fill',
+      isCurrent ? '#1e293b' :
+      isVisited ? 'rgba(255,255,255,.85)' :
+      'rgba(255,255,255,.45)'
+    );
+  });
+}
+
+function nihFlipInit(id) {
+  const inner = document.getElementById(id + '-inner');
+  const front = document.getElementById(id + '-front');
+  const back  = document.getElementById(id + '-back');
+  if (!inner || !front || !back) return;
+  const frontH = front.offsetHeight;
+  back.style.position = 'relative';
+  back.style.transform = 'none';
+  back.style.webkitTransform = 'none';
+  back.style.visibility = 'hidden';
+  const backH = back.offsetHeight;
+  back.style.position = 'absolute';
+  back.style.transform = 'rotateY(180deg)';
+  back.style.webkitTransform = 'rotateY(180deg)';
+  back.style.visibility = '';
+  const h = Math.max(frontH, backH);
+  if (h > 0) inner.style.height = h + 'px';
+}
+
+function nihFlipToggle(id) {
+  const inner = document.getElementById(id + '-inner');
+  const front = document.getElementById(id + '-front');
+  const back  = document.getElementById(id + '-back');
+  if (!inner || !front || !back) return;
+  const flipped = inner.getAttribute('data-flipped') === '1';
+  if (!flipped) {
+    const frontH = front.offsetHeight;
+    back.style.position = 'relative';
+    back.style.transform = 'none';
+    back.style.webkitTransform = 'none';
+    back.style.visibility = 'hidden';
+    const backH = back.offsetHeight;
+    back.style.position = 'absolute';
+    back.style.transform = 'rotateY(180deg)';
+    back.style.webkitTransform = 'rotateY(180deg)';
+    back.style.visibility = '';
+    inner.style.height = Math.max(frontH, backH) + 'px';
+  } else {
+    requestAnimationFrame(() => nihFlipInit(id));
+  }
+  inner.style.transform = flipped ? '' : 'rotateY(180deg)';
+  inner.style.webkitTransform = flipped ? '' : 'rotateY(180deg)';
+  inner.setAttribute('data-flipped', flipped ? '0' : '1');
+}
+
+/* ═════════════════════════════════════════════
+   NEUMONÍA INTRAHOSPITALARIA — RENDER
+═══════════════════════════════════════════════ */
+function renderNodeNIH(nodeId) {
+  const node = NODES_NIH[nodeId];
+  if (!node) return;
+
+  const pct  = Math.round(((node.step - 1) / NIH_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('nih-progress-fill');
+  const ptxt = document.getElementById('nih-progress-txt');
+  const path = document.getElementById('nih-path-txt');
+  const sub  = document.getElementById('nih-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (ptxt) ptxt.textContent = '';
+  if (path) path.textContent = nih_history.length > 0 ? `${nih_history.length} paso${nih_history.length > 1 ? 's' : ''} atrás` : '';
+
+  const sublabels = {
+    nih_start: 'Definición y sospecha diagnóstica',
+    nih_qsofa: 'Gravedad inicial',
+    nih_q0_route: 'qSOFA 0–1',
+    nih_q2_route: 'qSOFA ≥ 2',
+    nih_low_early: 'Quick-SOFA 0–1 · Estadía < 5 días',
+    nih_low_mdr: 'Tratamiento NIH con FR MDR',
+    nih_severe_early: 'qSOFA ≥ 2',
+    nih_severe_mdr: 'Shock séptico o IR severa',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || '';
+
+  let html = '';
+
+  if (node.type === 'nih_start') {
+    const sectionsHTML = node.sections.map(s => `
+      ${s.flipId ? `
+        <div class="info-section" style="padding:0 2px;border:none;background:transparent">
+          <div style="perspective:1000px;cursor:pointer" onclick="nihFlipToggle('${s.flipId}')">
+            <div id="${s.flipId}-inner" data-flipped="0" style="position:relative;width:100%;transform-style:preserve-3d;-webkit-transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1)">
+              <div id="${s.flipId}-front" style="width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;overflow:hidden;transform:translateZ(0);-webkit-transform:translateZ(0)">
+                <div style="background:white;border:2px solid #94a3b8;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.05)">
+                  <div class="info-section-title" style="margin-bottom:0;display:flex;align-items:center;justify-content:space-between;padding:7px 12px 4px;border-bottom:none;border-top:2px solid #0d9488">
+                    <span>Microbiología</span>
+                    <span style="font-size:14px;line-height:1;color:#0d9488;font-weight:900">↺</span>
+                  </div>
+                  <div style="background:white;padding:10px 12px">
+                    ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+                  </div>
+                </div>
+              </div>
+              <div id="${s.flipId}-back" style="position:absolute;top:0;left:0;width:100%;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);-webkit-transform:rotateY(180deg);border-radius:12px;overflow:hidden">
+                <div style="background:linear-gradient(160deg,#0f766e 0%,#0d9488 100%);color:white;padding:9px 12px;font-size:12px;font-weight:800;letter-spacing:.2px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between">
+                  <span>${s.backTitle}</span>
+                  <span style="font-size:14px;line-height:1;color:rgba(255,255,255,.95);font-weight:900">↺</span>
+                </div>
+                <div style="background:white;border:2px solid #0d9488;border-top:none;border-radius:0 0 12px 12px;padding:11px 12px;box-shadow:0 8px 16px rgba(15,118,110,.08)">
+                  ${s.backItems.map(i => `<div style="font-size:13px;color:#1e293b;line-height:1.5;margin-bottom:6px">• ${i}</div>`).join('')}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flip-hint">↺ Toca la tarjeta para girar</div>
+        </div>
+      ` : `
+        <div class="info-section">
+          <div class="info-section-title">${s.h}</div>
+          ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+        </div>
+      `}
+    `).join('');
+
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0ea5b7 0%,#0d7488 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:4px;text-transform:uppercase;letter-spacing:.8px">${node.subtitle}</div>
+        </div>
+        ${sectionsHTML}
+        <div class="alert-box" style="margin-top:14px">${node.alert}</div>
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="nihNavigate('${node.next}')">
+          <div class="tri"></div>
+          <span>Siguiente</span>
+        </button>
+      </div>`;
+  }
+
+  else if (node.type === 'nih_question') {
+    html = `
+      <div class="step-card">
+        <div style="display:flex;justify-content:center">
+          <div class="step-badge" style="background:#e0f2fe;color:#0c4a6e;font-size:12px;padding:6px 12px;letter-spacing:.2px;white-space:nowrap;text-align:center">${node.badgeText}</div>
+        </div>
+        <div class="note-box" style="margin-top:12px">
+          ${node.checklist.map(item => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0">
+              <div style="font-size:12px;color:#334155;line-height:1.35;flex:1">${item.text}</div>
+              ${typeof item.tableIndex === 'number' ? `<button class="btn-tables" onclick="showTablesNIH(${item.tableIndex})" style="width:auto;min-width:auto;padding:7px 10px;font-size:11px;border-radius:10px;box-shadow:none;flex-shrink:0;align-self:center;margin-top:0">📋 ${item.tableLabel}</button>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="nihNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '🚨' : '🩺'}</div>
+            <div class="origin-choice-body" style="display:flex;flex-direction:column;justify-content:center;min-height:38px">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              ${opt.desc ? `<div class="origin-choice-tag" style="color:${opt.color};margin-top:2px">${opt.desc}</div>` : ''}
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>
+        `).join('')}
+        <button class="btn-back" onclick="nihGoBack()">← Volver</button>
+      </div>`;
+  }
+
+  else if (node.type === 'nih_route') {
+    html = `
+      <div class="step-card">
+        <h2>${node.title}</h2>
+        <p class="sub">${node.subtitle}</p>
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color || node.color};background:white" onclick="nihNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color || node.color}">${node.color === '#dc2626' ? '🏥' : '💊'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color || node.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${opt.color || node.color}">${opt.tag}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color || node.color}">›</div>
+          </button>
+        `).join('')}
+        <button class="btn-tables" onclick="showTablesNIH(2)">📋 Ver FR para microorganismos resistentes</button>
+        <button class="btn-back" onclick="nihGoBack()">← Volver</button>
+      </div>`;
+  }
+
+  else if (node.type === 'nih_treatment') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-top:6px">${node.subtitle}</p>
+      </div>
+      <div class="treatment-body">
+        ${node.setting ? `
+          <div style="display:inline-flex;align-items:center;gap:6px;background:${node.settingColor};color:${node.settingText};font-size:11px;font-weight:800;padding:5px 10px;border-radius:999px;margin-bottom:12px">
+            🏥 ${node.setting}
+          </div>
+        ` : ''}
+        ${node.regimens.map(r => `
+          <div class="regimen-block" style="background:${r.bg}">
+            <div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>
+            ${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}
+          </div>
+        `).join('')}
+        ${node.notes ? `
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-top:10px">
+            ${node.notes.map(item => `
+              <div style="font-size:12px;color:#334155;line-height:1.45;margin-bottom:5px">
+                <span>• ${typeof item === 'string' ? item : item.text}</span>
+                ${typeof item === 'object' && typeof item.tableIndex === 'number'
+                  ? `<button class="btn-tables" onclick="showTablesNIH(${item.tableIndex})" style="display:inline-flex;width:auto;min-width:auto;padding:5px 8px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-left:6px;vertical-align:middle">📋 ${item.tableLabel}</button>`
+                  : ''}
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+        ${node.durationLabel ? `
+          <div style="margin-top:10px;background:${node.durationBg};color:${node.durationText};border-radius:10px;padding:10px 12px;font-size:12px;font-weight:800;text-align:center">
+            ${node.durationLabel}
+          </div>
+        ` : ''}
+        <div class="divider"></div>
+        <button class="btn-tables" onclick="showTablesNIH(2)">📋 FR de resistencia</button>
+        <button class="btn-tables" onclick="showTablesNIH(4)" style="margin-top:8px">📋 Rotación a VO</button>
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="nihGoBack()">← Volver</button>
+        <button class="btn-back" onclick="nihRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('nih-flow-body');
+  body.innerHTML = html;
+  if (node.type === 'nih_start') requestAnimationFrame(() => nihFlipInit('nih-micro'));
+  window.scrollTo(0,0);
+  updateMinimapNIH(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   NIH TABLES
+═══════════════════════════════════════════════ */
+function showTablesNIH(idx) {
+  document.getElementById('nih-tables-back-btn').onclick = () => showScreen('nih');
+  showScreen('nih-tables');
+  renderNIHTablesUI(idx || 0);
+}
+
+function renderNIHTablesUI(idx) {
+  nih_activeTabIndex = idx;
+  document.getElementById('nih-tabs-bar').innerHTML = NIH_TABLES.map((t, i) =>
+    `<button class="tab-btn${i===idx?' active':''}" onclick="nihSwipeToTable(${i})">${t.label}</button>`
+  ).join('');
+
+  const cardsHTML = NIH_TABLES.map((t, i) => {
+    if (t.id === 'nih_qsofa') {
+      const q = t.sections[0];
+      return `
+        <div class="table-swipe-card" id="nih-swipe-card-${i}">
+          <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+            <div class="table-swipe-head">${t.title}</div>
+            <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+              <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${q.head}</div>
+              <table class="tbl" style="margin-top:4px">
+                <thead>
+                  <tr>
+                    ${q.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${q.table.rows.map(r => `
+                    <tr>
+                      ${r.map((cell, idx2) => `<td style="font-size:11.5px;${idx2===1 ? 'font-weight:600;color:#334155;' : ''}">${cell}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    const sectionsHTML = t.sections.map(s => {
+      const rawNote = s.table && typeof s.table.note === 'string' ? s.table.note.trim() : '';
+      const noteHTML = rawNote && rawNote !== 'undefined' ? `<div class="tbl-note" style="margin:8px 0 0">${rawNote}</div>` : '';
+      return `
+        <div style="padding:10px 11px;border-bottom:1px solid ${t.id === 'nih_mdr' || t.id === 'nih_specific' ? '#fecaca' : '#e8f0f7'};${t.id === 'nih_mdr' || t.id === 'nih_specific' ? 'background:#fff5f5;' : ''}">
+          <div style="font-size:11px;font-weight:800;color:${t.id === 'nih_mdr' || t.id === 'nih_specific' ? '#b91c1c' : '#0c4a6e'};text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+          ${s.table ? `
+            <table class="tbl" style="margin-top:4px">
+              <thead>
+                <tr>
+                  ${s.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${s.table.rows.map(r => `
+                  <tr>
+                    ${r.map((cell, idx2) => `<td style="font-size:11.5px;${idx2===1 && s.table.heads.length===2 ? 'font-weight:600;color:#334155;' : ''}">${cell}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            ${noteHTML}
+          ` : s.items.map(item => `<div style="font-size:12px;color:${t.id === 'nih_mdr' || t.id === 'nih_specific' ? '#3f3f46' : '#1e293b'};line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="table-swipe-card" id="nih-swipe-card-${i}">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+          <div class="table-swipe-head" style="${t.id === 'nih_mdr' || t.id === 'nih_specific' ? 'background:linear-gradient(160deg,#ef4444 0%,#dc2626 100%)' : ''}">${t.title}</div>
+          ${sectionsHTML}
+        </div>
+      </div>`;
+  }).join('');
+
+  const dotsHTML = NIH_TABLES.map((_,i) =>
+    `<div class="swipe-dot${i===idx?' active':''}" onclick="nihSwipeToTable(${i})"></div>`
+  ).join('');
+
+  document.getElementById('nih-tables-panels').innerHTML = `
+    <div class="tables-swipe-container" id="nih-tables-swipe">${cardsHTML}</div>
+    <div class="swipe-dot-nav">${dotsHTML}</div>`;
+
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('nih-tables-swipe');
+    if (!scroller) return;
+    const cardWidth = scroller.clientWidth;
+    scroller.scrollLeft = idx * cardWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== nih_activeTabIndex) {
+          nih_activeTabIndex = active;
+          document.querySelectorAll('#nih-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===active));
+          document.querySelectorAll('#screen-nih-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===active));
+          nihScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+
+function nihSwipeToTable(i) {
+  nih_activeTabIndex = i;
+  document.querySelectorAll('#nih-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===i));
+  document.querySelectorAll('#screen-nih-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===i));
+  const scroller = document.getElementById('nih-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  nihScrollTabIntoView(i);
+}
+
+function nihScrollTabIntoView(i) {
+  const bar = document.getElementById('nih-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+/* ═════════════════════════════════════════════
    NEUMONÍA AGUDA — NAV
 ═══════════════════════════════════════════════ */
 function nacGoBack() {
@@ -2466,6 +2896,10 @@ function startGuide(id) {
     nac_history = []; nac_currentNode = 'nac_start';
     showScreen('nac');
     renderNodeNAC('nac_start');
+  } else if (id === 'nih') {
+    nih_history = []; nih_currentNode = 'nih_start';
+    showScreen('nih');
+    renderNodeNIH('nih_start');
   }
 }
 
