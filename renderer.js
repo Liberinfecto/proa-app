@@ -14,7 +14,7 @@ const GUIDES = [
   { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:false },
   { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:false },
   { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:false },
-  { id:'artritis', icon:'🦴', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:false },
+  { id:'artritis', icon:'🦴', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:true  },
   { id:'osteo_f',  icon:'🦴', bg:'#e0f2fe', name:'Osteomielitis de Hueso Largo Vinculada a Fractura',                          ok:false },
   { id:'osteo_v',  icon:'🦴', bg:'#e0f2fe', name:'Osteomielitis Vertebral / Espondilodiscitis',                                ok:false },
 ];
@@ -290,6 +290,24 @@ const PA_JUMP_PATHS = {
 let pie_currentNode = 'pie_start';
 let pie_history     = [];
 let pie_activeTabIndex = 0;
+
+/* ── ARTRITIS STATE ── */
+let ar_currentNode = 'ar_start';
+let ar_history     = [];
+let ar_activeTabIndex = 0;
+const AR_TOTAL_STEPS = 7;
+const AR_MM_IDS = ['ar_start','ar_arthro','ar_diagnosis','ar_tx_intro','ar_noinst_risk','ar_noinst_low','ar_noinst_mdr','ar_inst_recent'];
+const AR_JUMP_PATHS = {
+  'ar_start':        [],
+  'ar_stability':    ['ar_start'],
+  'ar_arthro':       ['ar_start'],
+  'ar_diagnosis':    ['ar_start','ar_arthro'],
+  'ar_tx_intro':     ['ar_start','ar_arthro','ar_diagnosis'],
+  'ar_noinst_risk':  ['ar_start','ar_arthro','ar_diagnosis','ar_tx_intro'],
+  'ar_noinst_low':   ['ar_start','ar_arthro','ar_diagnosis','ar_tx_intro','ar_noinst_risk'],
+  'ar_noinst_mdr':   ['ar_start','ar_arthro','ar_diagnosis','ar_tx_intro','ar_noinst_risk'],
+  'ar_inst_recent':  ['ar_start','ar_arthro','ar_diagnosis','ar_tx_intro'],
+};
 
 /* ── NIH STATE ── */
 let nih_currentNode = 'nih_start';
@@ -1990,6 +2008,360 @@ function pieScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   ARTRITIS SÉPTICA NATIVA AGUDA — NAV/RENDER
+═══════════════════════════════════════════════ */
+function arGoBack() {
+  if (ar_history.length > 0) {
+    ar_currentNode = ar_history.pop();
+    renderNodeAR(ar_currentNode);
+  } else { goHome(); }
+}
+function arNavigate(nodeId) {
+  ar_history.push(ar_currentNode);
+  ar_currentNode = nodeId;
+  renderNodeAR(nodeId);
+}
+function arRestart() {
+  ar_history = [];
+  ar_currentNode = 'ar_start';
+  renderNodeAR('ar_start');
+}
+function arJumpTo(id) {
+  if (id === ar_currentNode) return;
+  if (AR_JUMP_PATHS[id] !== undefined) {
+    ar_history = [...AR_JUMP_PATHS[id]];
+    ar_currentNode = id;
+    renderNodeAR(id);
+  }
+}
+function toggleMinimapAR() {
+  const panel = document.getElementById('ar-minimap-panel');
+  const btn   = document.getElementById('ar-minimap-arrow-btn');
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapAR(nodeId) {
+  AR_MM_IDS.forEach(id => {
+    const rect = document.getElementById('ar-mm-' + id);
+    const txt  = document.getElementById('ar-mmt-' + id);
+    if (!rect) return;
+    const isCurrent = id === nodeId;
+    const isVisited = ar_history.includes(id);
+    rect.setAttribute('fill',
+      isCurrent ? '#f59e0b' :
+      isVisited ? 'rgba(255,255,255,.28)' :
+      'rgba(255,255,255,.1)'
+    );
+    rect.setAttribute('stroke', isCurrent ? '#fbbf24' : 'none');
+    rect.setAttribute('stroke-width', isCurrent ? '2' : '0');
+    if (txt) txt.setAttribute('fill',
+      isCurrent ? '#1e293b' :
+      isVisited ? 'rgba(255,255,255,.85)' :
+      'rgba(255,255,255,.45)'
+    );
+  });
+}
+
+function renderNodeAR(nodeId) {
+  const node = NODES_ARTRITIS[nodeId];
+  if (!node) return;
+
+  const pct  = Math.round(((node.step - 1) / AR_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('ar-progress-fill');
+  const path = document.getElementById('ar-path-txt');
+  const sub  = document.getElementById('ar-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (path) path.textContent = ar_history.length > 0 ? `${ar_history.length} paso${ar_history.length > 1 ? 's' : ''} atrás` : '';
+
+  const sublabels = {
+    ar_start: 'Sospecha clínica',
+    ar_stability: 'Estabilidad inicial',
+    ar_arthro: 'Artrocentesis',
+    ar_diagnosis: 'Diagnóstico',
+    ar_tx_intro: 'Tratamiento médico-quirúrgico',
+    ar_joint_type: 'Tipo de articulación',
+    ar_noinst_risk: 'Factores de riesgo',
+    ar_noinst_low: 'Sin FR MDR',
+    ar_noinst_mdr: 'Con FR MDR',
+    ar_inst_recent: 'Instrumentada < 1 mes',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || '';
+
+  let html = '';
+
+  if (node.type === 'ar_start') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+      </div>
+    `).join('');
+
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#84cc16 0%,#65a30d 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11px;color:rgba(255,255,255,.84);margin-top:4px;text-transform:uppercase;letter-spacing:.8px">${node.subtitle}</div>
+        </div>
+        ${sectionsHTML}
+        <div class="triangle-nav-wrap" style="padding:8px 0 2px">
+          <div class="tri"></div>
+        </div>
+        <div class="note-box" style="margin-top:0;background:#e0f2fe;border-left:3px solid #0ea5e9;color:#0c4a6e;text-align:center;font-weight:700">${node.traumaText}</div>
+        <div class="triangle-nav-wrap" style="padding:8px 0 2px">
+          <div class="tri"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px">
+          <div style="background:linear-gradient(160deg,#86efac 0%,#4ade80 100%);border-radius:12px;padding:12px 10px;color:#14532d;box-shadow:var(--shadow-md);text-align:center">
+            <div style="font-size:12px;font-weight:800;line-height:1.3">Paciente estable</div>
+            <div style="font-size:11px;line-height:1.4;margin-top:5px">No inicie ATB hasta tomar cultivos</div>
+          </div>
+          <div style="background:linear-gradient(160deg,#fde68a 0%,#facc15 100%);border-radius:12px;padding:12px 10px;color:#713f12;box-shadow:var(--shadow-md);text-align:center">
+            <div style="font-size:12px;font-weight:800;line-height:1.3">Paciente inestable</div>
+            <div style="font-size:11px;line-height:1.4;margin-top:5px">qSOFA ≥ 2</div>
+          </div>
+        </div>
+        <button class="btn-tables" onclick="showTablesAR(0)" style="margin-top:10px">📋 Ver qSOFA</button>
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="arNavigate('${node.next}')">
+          <div class="tri"></div>
+          <span>Siguiente</span>
+        </button>
+      </div>`;
+  } else if (node.type === 'ar_info' && nodeId === 'ar_diagnosis') {
+    const clinica = node.sections[0];
+    const liquido = node.sections[1];
+
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0ea5b7 0%,#0d7488 100%)">
+          <h2>${node.title}</h2>
+        </div>
+
+        <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:12px;padding:11px 12px">
+          <div class="info-section-title" style="border-bottom:none;padding-bottom:0;margin-bottom:6px;color:#854d0e">Clínica y laboratorio</div>
+          ${clinica.items.map(i => `<div style="font-size:12px;color:#3f3f46;line-height:1.45;margin-bottom:4px">• ${i}</div>`).join('')}
+        </div>
+
+        <div style="display:flex;justify-content:center;padding:6px 0 4px;font-size:22px;font-weight:900;color:#ca8a04">+</div>
+
+        <div style="background:#fde68a;border:1px solid #facc15;border-radius:12px;padding:11px 12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <div class="info-section-title" style="border-bottom:none;padding-bottom:0;margin-bottom:0;color:#854d0e">Líquido Articular</div>
+            <button class="btn-tables" onclick="showTablesAR(1)" style="width:auto;min-width:auto;padding:6px 10px;font-size:11px;border-radius:9px;box-shadow:none">📋 Set de punción</button>
+          </div>
+          <div style="background:rgba(255,255,255,.55);border:1px solid rgba(250,204,21,.7);border-radius:10px;padding:9px 10px">
+            ${liquido.items.map(i => `<div style="font-size:12px;color:#3f3f46;line-height:1.45;margin-bottom:5px">• ${i}</div>`).join('')}
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:center;padding:6px 0 4px;font-size:22px;font-weight:900;color:#ea580c">+</div>
+
+        <div style="background:#fed7aa;border:1px solid #fdba74;border-radius:12px;padding:11px 12px">
+          <div class="info-section-title" style="border-bottom:none;padding-bottom:0;margin-bottom:6px;color:#9a3412">Microbiológico</div>
+          <div style="font-size:12px;color:#3f3f46;line-height:1.45;margin-bottom:4px">• Hemocultivos (+).</div>
+          <div style="font-size:12px;color:#3f3f46;line-height:1.45;margin-bottom:4px">• Gram de líquido articular (+).</div>
+          <div style="font-size:12px;color:#3f3f46;line-height:1.45;margin-bottom:4px">• Cultivo de líquido articular (+).</div>
+          <div style="margin-top:8px;background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:9px 10px;font-size:12px;font-weight:800;line-height:1.4;color:#991b1b">Gold standard: cultivo positivo de líquido sinovial.</div>
+        </div>
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="arNavigate('${node.next}')">
+          <div class="tri"></div>
+          <span>Siguiente</span>
+        </button>
+      </div>
+      <div class="choices"><button class="btn-back" onclick="arGoBack()">← Volver</button></div>`;
+  } else if (node.type === 'ar_info') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+      </div>
+    `).join('');
+
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0ea5b7 0%,#0d7488 100%)">
+          <h2>${node.title}</h2>
+          ${node.subtitle ? `<div style="font-size:11px;color:rgba(255,255,255,.84);margin-top:4px;text-transform:uppercase;letter-spacing:.8px">${node.subtitle}</div>` : ''}
+        </div>
+        ${sectionsHTML}
+        ${node.noteLines ? `<div class="note-box" style="margin-top:12px">${node.noteLines.map(line => `<div style="margin-bottom:4px">• ${line}</div>`).join('')}</div>` : ''}
+        ${node.actions ? `<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">${node.actions.map(a => `<button class="btn-tables" onclick="showTablesAR(${a.tableIndex})">📋 ${a.label}</button>`).join('')}</div>` : ''}
+      </div>
+      ${node.next ? `
+        <div class="triangle-nav-wrap">
+          <button class="triangle-nav-btn" onclick="arNavigate('${node.next}')">
+            <div class="tri"></div>
+            <span>Siguiente</span>
+          </button>
+        </div>
+        <div class="choices"><button class="btn-back" onclick="arGoBack()">← Volver</button></div>
+      ` : `
+        <div class="choices"><button class="btn-back" onclick="arGoBack()">← Volver</button></div>
+      `}`;
+  } else if (node.type === 'ar_choice' || node.type === 'ar_route') {
+    html = `
+      <div class="step-card">
+        ${node.badgeText ? `<div style="display:flex;justify-content:center"><div class="step-badge" style="background:#e0f2fe;color:#0c4a6e;font-size:12px;padding:6px 12px;letter-spacing:.2px;white-space:nowrap;text-align:center">${node.badgeText}</div></div>` : `<h2>${node.title}</h2>`}
+        ${node.note ? `<div class="note-box" style="margin-top:12px">${node.note}</div>` : (node.subtitle ? `<p class="sub" style="margin-top:10px">${node.subtitle}</p>` : '')}
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="arNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#ea580c' ? '🚨' : opt.color === '#65a30d' ? '🛡️' : opt.color === '#f59e0b' ? '🦿' : '🩺'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              ${opt.desc ? `<div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>` : ''}
+              ${opt.tag ? `<div class="origin-choice-tag" style="color:${opt.color}">${opt.tag}</div>` : ''}
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>
+        `).join('')}
+        ${typeof node.tableIndex === 'number' ? `<button class="btn-tables" onclick="showTablesAR(${node.tableIndex})">📋 FR MDR y mala evolución</button>` : ''}
+        <button class="btn-back" onclick="arGoBack()">← Volver</button>
+      </div>`;
+  } else if (node.type === 'ar_treatment') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor};color:${node.headerTextColor || '#fff'}">
+        <h2 style="color:${node.headerTextColor || '#fff'}">${node.title}</h2>
+        ${node.subtitle ? `<p style="color:${node.headerTextColor || '#fff'};opacity:.92">${node.subtitle}</p>` : ''}
+      </div>
+      <div class="treatment-body">
+        ${node.regimens.map(r => `
+          <div class="regimen-block" style="background:${r.bg}">
+            <div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>
+            ${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}
+          </div>
+          ${nodeId === 'ar_noinst_mdr' && r.label === 'Cobertura para gram positivos / FR SAMR' ? `<div style="display:flex;justify-content:center;align-items:center;font-size:26px;font-weight:900;color:#65a30d;margin:-2px 0 6px">+</div>` : ''}
+        `).join('')}
+        ${node.notes ? `
+          <div style="background:${nodeId === 'ar_inst_recent' ? '#fb923c' : '#f8fafc'};border:1px solid ${nodeId === 'ar_inst_recent' ? '#ea580c' : '#e2e8f0'};border-radius:12px;padding:11px 12px;margin-top:10px">
+            ${node.notes.map(item => `<div style="font-size:12px;color:${nodeId === 'ar_inst_recent' ? '#431407' : '#334155'};line-height:1.45;margin-bottom:5px;font-weight:${nodeId === 'ar_inst_recent' ? '700' : '400'}">• ${item}</div>`).join('')}
+          </div>
+        ` : ''}
+        ${node.durationLabel ? `<div style="margin-top:10px;background:${node.durationBg};color:${node.durationText};border-radius:10px;padding:10px 12px;font-size:12px;font-weight:800;text-align:center">${node.durationLabel}</div>` : ''}
+        ${node.footLabel ? `<div style="margin-top:10px;background:${node.footBg};color:${node.footText};border-radius:10px;padding:10px 12px;font-size:11.5px;font-weight:700;text-align:center;line-height:1.4">${node.footLabel}</div>` : ''}
+        <div class="divider"></div>
+        ${node.actionButtons ? node.actionButtons.map((b, idx) => `<button class="btn-tables" onclick="showTablesAR(${b.tableIndex})" style="${idx ? 'margin-top:8px' : ''}">📋 ${b.label}</button>`).join('') : ''}
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="arGoBack()">← Volver</button>
+        <button class="btn-back" onclick="arRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('ar-flow-body');
+  body.innerHTML = html;
+  window.scrollTo(0,0);
+  updateMinimapAR(nodeId);
+}
+
+function showTablesAR(idx) {
+  document.getElementById('ar-tables-back-btn').onclick = () => showScreen('artritis');
+  showScreen('artritis-tables');
+  renderARTablesUI(idx || 0);
+}
+
+function renderARTablesUI(idx) {
+  ar_activeTabIndex = idx;
+  document.getElementById('ar-tabs-bar').innerHTML = ARTRITIS_TABLES.map((t, i) =>
+    `<button class="tab-btn${i===idx?' active':''}" onclick="arSwipeToTable(${i})">${t.label}</button>`
+  ).join('');
+
+  const cardsHTML = ARTRITIS_TABLES.map((t, i) => {
+    if (t.id === 'ar_qsofa') {
+      const q = t.sections[0];
+      return `
+        <div class="table-swipe-card" id="ar-swipe-card-${i}">
+          <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+            <div class="table-swipe-head">${t.title}</div>
+            <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+              <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${q.head}</div>
+              <table class="tbl" style="margin-top:4px">
+                <thead>
+                  <tr>
+                    ${q.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${q.table.rows.map(r => `
+                    <tr>
+                      ${r.map((cell, idx2) => `<td style="font-size:11.5px;${idx2===1 ? 'font-weight:600;color:#334155;' : ''}">${cell}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    const sectionsHTML = t.sections.map(s => `
+      <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+        <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+        ${s.items.map(item => `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+      </div>
+    `).join('');
+    return `
+      <div class="table-swipe-card" id="ar-swipe-card-${i}">
+        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+          <div class="table-swipe-head">${t.title}</div>
+          ${sectionsHTML}
+        </div>
+      </div>`;
+  }).join('');
+
+  const dotsHTML = ARTRITIS_TABLES.map((_,i) =>
+    `<div class="swipe-dot${i===idx?' active':''}" onclick="arSwipeToTable(${i})"></div>`
+  ).join('');
+
+  document.getElementById('ar-tables-panels').innerHTML = `
+    <div class="tables-swipe-container" id="ar-tables-swipe">${cardsHTML}</div>
+    <div class="swipe-dot-nav">${dotsHTML}</div>`;
+
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('ar-tables-swipe');
+    if (!scroller) return;
+    const cardWidth = scroller.clientWidth;
+    scroller.scrollLeft = idx * cardWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== ar_activeTabIndex) {
+          ar_activeTabIndex = active;
+          document.querySelectorAll('#ar-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===active));
+          document.querySelectorAll('#screen-artritis-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===active));
+          arScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+
+function arSwipeToTable(i) {
+  ar_activeTabIndex = i;
+  document.querySelectorAll('#ar-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===i));
+  document.querySelectorAll('#screen-artritis-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===i));
+  const scroller = document.getElementById('ar-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  arScrollTabIntoView(i);
+}
+
+function arScrollTabIntoView(i) {
+  const bar = document.getElementById('ar-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+/* ═════════════════════════════════════════════
    NEUMONÍA INTRAHOSPITALARIA — NAV
 ═══════════════════════════════════════════════ */
 function nihGoBack() {
@@ -2900,6 +3272,10 @@ function startGuide(id) {
     nih_history = []; nih_currentNode = 'nih_start';
     showScreen('nih');
     renderNodeNIH('nih_start');
+  } else if (id === 'artritis') {
+    ar_history = []; ar_currentNode = 'ar_start';
+    showScreen('artritis');
+    renderNodeAR('ar_start');
   }
 }
 
