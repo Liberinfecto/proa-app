@@ -15,7 +15,7 @@ const GUIDES = [
   { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:false },
   { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:false },
   { id:'artritis', icon:'🦴', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:true  },
-  { id:'osteo_f',  icon:'🦴', bg:'#e0f2fe', name:'Osteomielitis de Hueso Largo Vinculada a Fractura',                          ok:false },
+  { id:'osteo_f',  icon:'🦴', bg:'#e0f2fe', name:'Osteomielitis de Hueso Largo Vinculada a Fractura',                          ok:true  },
   { id:'osteo_v',  icon:'🦴', bg:'#e0f2fe', name:'Osteomielitis Vertebral / Espondilodiscitis',                                ok:false },
 ];
 
@@ -307,6 +307,29 @@ const AR_JUMP_PATHS = {
   'ar_noinst_low':   ['ar_start','ar_arthro','ar_diagnosis','ar_tx_intro','ar_noinst_risk'],
   'ar_noinst_mdr':   ['ar_start','ar_arthro','ar_diagnosis','ar_tx_intro','ar_noinst_risk'],
   'ar_inst_recent':  ['ar_start','ar_arthro','ar_diagnosis','ar_tx_intro'],
+};
+
+/* ── OSTEO_F STATE ── */
+let of_currentNode = 'of_start';
+let of_history     = [];
+let of_activeTabIndex = 0;
+const OF_TOTAL_STEPS = 9;
+const OF_MM_IDS = ['of_start','of_early','of_late_route','of_late_no_implant','of_late_implant_route','of_late_loose','of_late_firm','of_tx_route','of_tx_low','of_tx_mdr'];
+const OF_JUMP_PATHS = {
+  'of_start':               [],
+  'of_time':                ['of_start'],
+  'of_early':               ['of_start','of_time'],
+  'of_late_route':          ['of_start','of_time'],
+  'of_late_no_implant':     ['of_start','of_time','of_late_route'],
+  'of_late_implant_route':  ['of_start','of_time','of_late_route'],
+  'of_late_consolidated':   ['of_start','of_time','of_late_route','of_late_implant_route'],
+  'of_late_nonconsolidated':['of_start','of_time','of_late_route','of_late_implant_route'],
+  'of_late_loose':          ['of_start','of_time','of_late_route','of_late_implant_route','of_late_nonconsolidated'],
+  'of_late_firm':           ['of_start','of_time','of_late_route','of_late_implant_route','of_late_nonconsolidated'],
+  'of_tx_intro':            ['of_start','of_time'],
+  'of_tx_route':            ['of_start','of_time','of_tx_intro'],
+  'of_tx_low':              ['of_start','of_time','of_tx_intro','of_tx_route'],
+  'of_tx_mdr':              ['of_start','of_time','of_tx_intro','of_tx_route'],
 };
 
 /* ── NIH STATE ── */
@@ -2363,6 +2386,342 @@ function arScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   OSTEOMIELITIS VINCULADA A FRACTURA — NAV/RENDER
+═══════════════════════════════════════════════ */
+function ofGoBack() {
+  if (of_history.length > 0) {
+    of_currentNode = of_history.pop();
+    renderNodeOF(of_currentNode);
+  } else { goHome(); }
+}
+function ofNavigate(nodeId) {
+  of_history.push(of_currentNode);
+  of_currentNode = nodeId;
+  renderNodeOF(nodeId);
+}
+function ofRestart() {
+  of_history = [];
+  of_currentNode = 'of_start';
+  renderNodeOF('of_start');
+}
+function ofJumpTo(id) {
+  if (id === of_currentNode) return;
+  if (OF_JUMP_PATHS[id] !== undefined) {
+    of_history = [...OF_JUMP_PATHS[id]];
+    of_currentNode = id;
+    renderNodeOF(id);
+  }
+}
+function toggleMinimapOF() {
+  const panel = document.getElementById('of-minimap-panel');
+  const btn   = document.getElementById('of-minimap-arrow-btn');
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapOF(nodeId) {
+  OF_MM_IDS.forEach(id => {
+    const rect = document.getElementById('of-mm-' + id);
+    const txt  = document.getElementById('of-mmt-' + id);
+    if (!rect) return;
+    const isCurrent = id === nodeId;
+    const isVisited = of_history.includes(id);
+    rect.setAttribute('fill',
+      isCurrent ? '#f59e0b' :
+      isVisited ? 'rgba(255,255,255,.28)' :
+      'rgba(255,255,255,.1)'
+    );
+    rect.setAttribute('stroke', isCurrent ? '#fbbf24' : 'none');
+    rect.setAttribute('stroke-width', isCurrent ? '2' : '0');
+    if (txt) txt.setAttribute('fill',
+      isCurrent ? '#1e293b' :
+      isVisited ? 'rgba(255,255,255,.85)' :
+      'rgba(255,255,255,.45)'
+    );
+  });
+}
+
+function renderNodeOF(nodeId) {
+  const node = NODES_OSTEO_F[nodeId];
+  if (!node) return;
+
+  const pct  = Math.round(((node.step - 1) / OF_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('of-progress-fill');
+  const path = document.getElementById('of-path-txt');
+  const sub  = document.getElementById('of-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (path) path.textContent = of_history.length > 0 ? `${of_history.length} paso${of_history.length > 1 ? 's' : ''} atrás` : '';
+
+  const sublabels = {
+    of_start: 'Sospecha clínica',
+    of_time: 'Tiempo de evolución',
+    of_early: 'Fractura temprana',
+    of_late_route: 'Fractura tardía',
+    of_late_no_implant: 'Sin osteosíntesis',
+    of_late_implant_route: 'Con osteosíntesis',
+    of_late_consolidated: 'Consolidada',
+    of_late_nonconsolidated: 'No consolidada',
+    of_late_loose: 'Implante suelto o flojo',
+    of_late_firm: 'Implante firme',
+    of_tx_intro: 'Inicio del tratamiento',
+    of_tx_route: 'Tratamiento empírico',
+    of_tx_low: 'Sin FR MDR',
+    of_tx_mdr: 'Con FR MDR',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || '';
+
+  let html = '';
+
+  if (node.type === 'of_start') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section" style="${
+        s.h === 'Clínica'
+          ? 'background:#dcfce7;border:1px solid #86efac;border-radius:12px;padding:11px 12px;'
+          : s.h === 'Solicitar Paraclínica'
+            ? 'background:#f1f5f9;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;'
+            : ''
+      }">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+      </div>
+    `).join('');
+
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0ea5b7 0%,#0d7488 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11px;color:rgba(255,255,255,.84);margin-top:4px;text-transform:uppercase;letter-spacing:.8px">${node.subtitle}</div>
+        </div>
+        ${sectionsHTML}
+        <div class="triangle-nav-wrap" style="padding:8px 0 2px">
+          <div class="tri"></div>
+        </div>
+        <div class="note-box" style="margin-top:0;background:#e0f2fe;border-left:3px solid #0ea5e9;color:#0c4a6e;text-align:center;font-weight:700">${node.traumaText}</div>
+        <div class="triangle-nav-wrap" style="padding:8px 0 2px">
+          <div class="tri"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px">
+          <div style="background:linear-gradient(160deg,#86efac 0%,#4ade80 100%);border-radius:12px;padding:12px 10px;color:#14532d;box-shadow:var(--shadow-md);text-align:center">
+            <div style="font-size:12px;font-weight:800;line-height:1.3">Paciente clínicamente estable</div>
+            <div style="font-size:11px;line-height:1.4;margin-top:5px">No inicie ATB hasta tomar cultivos</div>
+          </div>
+          <div style="background:linear-gradient(160deg,#fde68a 0%,#facc15 100%);border-radius:12px;padding:12px 10px;color:#713f12;box-shadow:var(--shadow-md);text-align:center">
+            <div style="font-size:12px;font-weight:800;line-height:1.3">Paciente inestable</div>
+            <div style="font-size:11px;line-height:1.4;margin-top:5px">qSOFA ≥ 2</div>
+            <div style="font-size:11px;line-height:1.35;margin-top:6px;font-weight:700">Inicie ATB empírico y continúe con el algoritmo diagnóstico</div>
+          </div>
+        </div>
+        <button class="btn-tables" onclick="showTablesOF(0)" style="margin-top:10px">📋 Ver qSOFA</button>
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="ofNavigate('${node.next}')">
+          <div class="tri"></div>
+          <span>Siguiente</span>
+        </button>
+      </div>`;
+  } else if (node.type === 'of_info') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section" style="${
+        s.h === 'Conducta'
+          ? 'background:#dcfce7;border:1px solid #86efac;border-radius:12px;padding:11px 12px;'
+          : s.h === 'Tratamiento antimicrobiano sistémico' || s.h === 'Inicio'
+            ? 'background:#f1f5f9;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;'
+            : ''
+      }">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+      </div>
+    `).join('');
+
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0ea5b7 0%,#0d7488 100%)">
+          <h2>${node.title}</h2>
+          ${node.subtitle ? `<div style="font-size:${nodeId === 'of_early' ? '13px' : '11px'};font-weight:${nodeId === 'of_early' ? '800' : '500'};color:rgba(255,255,255,.92);margin-top:4px;text-transform:uppercase;letter-spacing:${nodeId === 'of_early' ? '.9px' : '.8px'}">${node.subtitle}</div>` : ''}
+        </div>
+        ${sectionsHTML}
+        ${node.noteLines ? `<div class="note-box" style="margin-top:12px">${node.noteLines.map(line => `<div style="margin-bottom:4px">• ${line}</div>`).join('')}</div>` : ''}
+        ${node.actions ? `<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">${node.actions.map(a => `<button class="btn-tables" onclick="showTablesOF(${a.tableIndex})">📋 ${a.label}</button>`).join('')}</div>` : ''}
+      </div>
+      ${node.next ? `
+        <div class="triangle-nav-wrap">
+          <button class="triangle-nav-btn" onclick="ofNavigate('${node.next}')">
+            <div class="tri"></div>
+            <span>Siguiente</span>
+          </button>
+        </div>
+        <div class="choices"><button class="btn-back" onclick="ofGoBack()">← Volver</button></div>
+      ` : `
+        <div class="choices"><button class="btn-back" onclick="ofGoBack()">← Volver</button></div>
+      `}`;
+  } else if (node.type === 'of_route') {
+    html = `
+      <div class="step-card">
+        <h2>${node.title}</h2>
+        ${node.subtitle ? `<p class="sub" style="margin-top:10px">${node.subtitle}</p>` : ''}
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="ofNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '🚨' : opt.color === '#16a34a' ? '🦴' : opt.color === '#0284c7' ? '🔧' : '🩺'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              ${opt.tag ? `<div class="origin-choice-tag" style="color:${opt.color}">${opt.tag}</div>` : ''}
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>
+        `).join('')}
+        <button class="btn-back" onclick="ofGoBack()">← Volver</button>
+      </div>`;
+  } else if (node.type === 'of_treatment') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor};color:${node.headerTextColor || '#fff'}">
+        <h2 style="color:${node.headerTextColor || '#fff'}">${node.title}</h2>
+        ${node.subtitle ? `<p style="color:${node.headerTextColor || '#fff'};opacity:.92">${node.subtitle}</p>` : ''}
+      </div>
+      <div class="treatment-body">
+        ${node.regimens.map(r => `
+          <div class="regimen-block" style="background:${r.bg}">
+            <div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>
+            ${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}
+          </div>
+        `).join('')}
+        ${node.notes ? (
+          nodeId === 'of_tx_mdr'
+            ? `
+              <div style="background:#fb923c;border:1px solid #ea580c;border-radius:12px;padding:11px 12px;margin-top:10px">
+                <div style="font-size:12px;color:#431407;line-height:1.45;font-weight:700">• ${node.notes[0]}</div>
+              </div>
+              ${node.notes.length > 1 ? `
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-top:10px">
+                  ${node.notes.slice(1).map(item => `<div style="font-size:12px;color:#334155;line-height:1.45;margin-bottom:5px">• ${item}</div>`).join('')}
+                </div>
+              ` : ''}
+            `
+            : `
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-top:10px">
+                ${node.notes.map(item => `<div style="font-size:12px;color:#334155;line-height:1.45;margin-bottom:5px">• ${item}</div>`).join('')}
+              </div>
+            `
+        ) : ''}
+        <div class="divider"></div>
+        ${node.actionButtons ? node.actionButtons.map((b, idx) => `<button class="btn-tables" onclick="showTablesOF(${b.tableIndex})" style="${idx ? 'margin-top:8px' : ''}">📋 ${b.label}</button>`).join('') : ''}
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="ofGoBack()">← Volver</button>
+        <button class="btn-back" onclick="ofRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('of-flow-body');
+  body.innerHTML = html;
+  window.scrollTo(0,0);
+  updateMinimapOF(nodeId);
+}
+
+function showTablesOF(idx) {
+  document.getElementById('of-tables-back-btn').onclick = () => showScreen('osteo_f');
+  showScreen('osteo_f-tables');
+  renderOFTablesUI(idx || 0);
+}
+
+function renderOFTablesUI(idx) {
+  of_activeTabIndex = idx;
+  document.getElementById('of-tabs-bar').innerHTML = OSTEO_F_TABLES.map((t, i) =>
+    `<button class="tab-btn${i===idx?' active':''}" onclick="ofSwipeToTable(${i})">${t.label}</button>`
+  ).join('');
+
+  const cardsHTML = OSTEO_F_TABLES.map((t, i) => {
+    if (t.id === 'of_qsofa') {
+      const q = t.sections[0];
+      return `
+        <div class="table-swipe-card" id="of-swipe-card-${i}">
+          <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+            <div class="table-swipe-head">${t.title}</div>
+            <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+              <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${q.head}</div>
+              <table class="tbl" style="margin-top:4px">
+                <thead>
+                  <tr>
+                    ${q.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${q.table.rows.map(r => `
+                    <tr>
+                      ${r.map((cell, idx2) => `<td style="font-size:11.5px;${idx2===1 ? 'font-weight:600;color:#334155;' : ''}">${cell}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    const sectionsHTML = t.sections.map(s => `
+      <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+        <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+        ${s.items.map(item => `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+      </div>
+    `).join('');
+
+    return `
+      <div class="table-swipe-card" id="of-swipe-card-${i}">
+        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+          <div class="table-swipe-head">${t.title}</div>
+          ${sectionsHTML}
+        </div>
+      </div>`;
+  }).join('');
+
+  const dotsHTML = OSTEO_F_TABLES.map((_,i) =>
+    `<div class="swipe-dot${i===idx?' active':''}" onclick="ofSwipeToTable(${i})"></div>`
+  ).join('');
+
+  document.getElementById('of-tables-panels').innerHTML = `
+    <div class="tables-swipe-container" id="of-tables-swipe">${cardsHTML}</div>
+    <div class="swipe-dot-nav">${dotsHTML}</div>`;
+
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('of-tables-swipe');
+    if (!scroller) return;
+    const cardWidth = scroller.clientWidth;
+    scroller.scrollLeft = idx * cardWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== of_activeTabIndex) {
+          of_activeTabIndex = active;
+          document.querySelectorAll('#of-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===active));
+          document.querySelectorAll('#screen-osteo_f-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===active));
+          ofScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+
+function ofSwipeToTable(i) {
+  of_activeTabIndex = i;
+  document.querySelectorAll('#of-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===i));
+  document.querySelectorAll('#screen-osteo_f-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===i));
+  const scroller = document.getElementById('of-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  ofScrollTabIntoView(i);
+}
+
+function ofScrollTabIntoView(i) {
+  const bar = document.getElementById('of-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+/* ═════════════════════════════════════════════
    NEUMONÍA INTRAHOSPITALARIA — NAV
 ═══════════════════════════════════════════════ */
 function nihGoBack() {
@@ -3277,6 +3636,10 @@ function startGuide(id) {
     ar_history = []; ar_currentNode = 'ar_start';
     showScreen('artritis');
     renderNodeAR('ar_start');
+  } else if (id === 'osteo_f') {
+    of_history = []; of_currentNode = 'of_start';
+    showScreen('osteo_f');
+    renderNodeOF('of_start');
   }
 }
 
