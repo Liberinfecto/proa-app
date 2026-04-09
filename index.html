@@ -927,7 +927,7 @@
         <button class="proa-pill" onclick="showTablesOF(0)">Tablas</button>
       </div>
       <div class="minimap-panel" id="of-minimap-panel">
-        <svg id="of-minimap-svg" viewBox="0 0 300 196" width="100%" style="display:block;overflow:visible">
+        <svg id="of-minimap-svg" viewBox="0 0 300 216" width="100%" style="display:block;overflow:visible">
           <defs>
             <marker id="arr-of" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
               <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
@@ -940,13 +940,13 @@
           <line x1="228" y1="34" x2="228" y2="46" stroke="rgba(255,255,255,.22)" stroke-width="1.1" marker-end="url(#arr-of)"/>
           <!-- < 4 sem → Con o sin OS -->
           <line x1="72" y1="64" x2="72" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
-          <!-- > 4 sem → Sin OS / Con OS -->
-          <line x1="228" y1="64" x2="228" y2="74" stroke="rgba(255,255,255,.2)" stroke-width="1.05"/>
-          <line x1="186" y1="74" x2="256" y2="74" stroke="rgba(255,255,255,.2)" stroke-width="1.05"/>
-          <line x1="186" y1="74" x2="186" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
-          <line x1="256" y1="74" x2="256" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
+          <!-- > 4 sem → Sin OS / Con OS (barra horizontal elevada a y=68) -->
+          <line x1="228" y1="64" x2="228" y2="68" stroke="rgba(255,255,255,.2)" stroke-width="1.05"/>
+          <line x1="186" y1="68" x2="259" y2="68" stroke="rgba(255,255,255,.2)" stroke-width="1.05"/>
+          <line x1="186" y1="68" x2="186" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
+          <line x1="259" y1="68" x2="259" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
           <!-- Con OS → Flojo / Firme -->
-          <line x1="256" y1="94" x2="256" y2="104" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+          <line x1="259" y1="94" x2="259" y2="104" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
           <line x1="196" y1="104" x2="278" y2="104" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
           <line x1="196" y1="104" x2="196" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1" marker-end="url(#arr-of)"/>
           <line x1="278" y1="104" x2="278" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1" marker-end="url(#arr-of)"/>
@@ -957,11 +957,11 @@
           <line x1="278" y1="134" x2="278" y2="144" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
           <line x1="72" y1="144" x2="278" y2="144" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
           <line x1="150" y1="144" x2="150" y2="156" stroke="rgba(255,255,255,.16)" stroke-width="1" marker-end="url(#arr-of)"/>
-          <!-- TTO → Sin FR / Con FR -->
+          <!-- TTO → Sin FR / Con FR (nodos bajados a y=194) -->
           <line x1="150" y1="174" x2="150" y2="186" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
           <line x1="108" y1="186" x2="192" y2="186" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
-          <line x1="108" y1="186" x2="108" y2="192" stroke="rgba(255,255,255,.14)" stroke-width="1" marker-end="url(#arr-of)"/>
-          <line x1="192" y1="186" x2="192" y2="192" stroke="rgba(255,255,255,.14)" stroke-width="1" marker-end="url(#arr-of)"/>
+          <line x1="108" y1="186" x2="108" y2="194" stroke="rgba(255,255,255,.14)" stroke-width="1" marker-end="url(#arr-of)"/>
+          <line x1="192" y1="186" x2="192" y2="194" stroke="rgba(255,255,255,.14)" stroke-width="1" marker-end="url(#arr-of)"/>
 
           <!-- NODES -->
           <rect id="of-mm-of_start" x="101" y="4" width="98" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_start')"/>
@@ -991,11 +991,11 @@
           <rect id="of-mm-of_tx_route" x="112" y="156" width="76" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_route')"/>
           <text id="of-mmt-of_tx_route" x="150" y="168" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">TTO Empírico</text>
 
-          <rect id="of-mm-of_tx_low" x="81" y="174" width="54" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_low')"/>
-          <text id="of-mmt-of_tx_low" x="108" y="186" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin FR</text>
+          <rect id="of-mm-of_tx_low" x="81" y="194" width="54" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_low')"/>
+          <text id="of-mmt-of_tx_low" x="108" y="206" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin FR</text>
 
-          <rect id="of-mm-of_tx_mdr" x="165" y="174" width="54" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_mdr')"/>
-          <text id="of-mmt-of_tx_mdr" x="192" y="186" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con FR</text>
+          <rect id="of-mm-of_tx_mdr" x="165" y="194" width="54" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_mdr')"/>
+          <text id="of-mmt-of_tx_mdr" x="192" y="206" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con FR</text>
         </svg>
       </div>
       <div style="display:flex;justify-content:center;padding:2px 0 4px">
