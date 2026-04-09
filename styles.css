@@ -800,7 +800,7 @@ body {
   transition: max-height .3s ease, padding .3s ease;
 }
 .minimap-panel.open {
-  max-height: 230px;
+  max-height: 265px;
   padding: 4px 12px 14px;
 }
 /* ── DRAG HANDLE ─────────────────────────────── */
