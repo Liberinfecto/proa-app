@@ -927,7 +927,7 @@
         <button class="proa-pill" onclick="showTablesOF(0)">Tablas</button>
       </div>
       <div class="minimap-panel" id="of-minimap-panel">
-        <svg id="of-minimap-svg" viewBox="0 0 300 216" width="100%" style="display:block;overflow:visible">
+        <svg id="of-minimap-svg" viewBox="0 0 300 230" width="100%" style="display:block;overflow:visible">
           <defs>
             <marker id="arr-of" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
               <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
@@ -935,67 +935,75 @@
           </defs>
           <!-- Sospecha → split -->
           <line x1="150" y1="22" x2="150" y2="34" stroke="rgba(255,255,255,.24)" stroke-width="1.2"/>
-          <line x1="72" y1="34" x2="228" y2="34" stroke="rgba(255,255,255,.22)" stroke-width="1.1"/>
-          <line x1="72" y1="34" x2="72" y2="46" stroke="rgba(255,255,255,.22)" stroke-width="1.1" marker-end="url(#arr-of)"/>
-          <line x1="228" y1="34" x2="228" y2="46" stroke="rgba(255,255,255,.22)" stroke-width="1.1" marker-end="url(#arr-of)"/>
+          <line x1="68" y1="34" x2="218" y2="34" stroke="rgba(255,255,255,.22)" stroke-width="1.1"/>
+          <line x1="68" y1="34" x2="68" y2="46" stroke="rgba(255,255,255,.22)" stroke-width="1.1" marker-end="url(#arr-of)"/>
+          <line x1="218" y1="34" x2="218" y2="46" stroke="rgba(255,255,255,.22)" stroke-width="1.1" marker-end="url(#arr-of)"/>
           <!-- < 4 sem → Con o sin OS -->
-          <line x1="72" y1="64" x2="72" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
-          <!-- > 4 sem → Sin OS / Con OS (barra horizontal elevada a y=68) -->
-          <line x1="228" y1="64" x2="228" y2="68" stroke="rgba(255,255,255,.2)" stroke-width="1.05"/>
-          <line x1="186" y1="68" x2="259" y2="68" stroke="rgba(255,255,255,.2)" stroke-width="1.05"/>
-          <line x1="186" y1="68" x2="186" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
-          <line x1="259" y1="68" x2="259" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
-          <!-- Con OS → Flojo / Firme -->
-          <line x1="259" y1="94" x2="259" y2="104" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
-          <line x1="196" y1="104" x2="278" y2="104" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
-          <line x1="196" y1="104" x2="196" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1" marker-end="url(#arr-of)"/>
-          <line x1="278" y1="104" x2="278" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1" marker-end="url(#arr-of)"/>
-          <!-- All paths → TTO -->
-          <line x1="72" y1="94" x2="72" y2="144" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
-          <line x1="186" y1="94" x2="186" y2="144" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
-          <line x1="196" y1="134" x2="196" y2="144" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
-          <line x1="278" y1="134" x2="278" y2="144" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
-          <line x1="72" y1="144" x2="278" y2="144" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
-          <line x1="150" y1="144" x2="150" y2="156" stroke="rgba(255,255,255,.16)" stroke-width="1" marker-end="url(#arr-of)"/>
-          <!-- TTO → Sin FR / Con FR (nodos bajados a y=194) -->
-          <line x1="150" y1="174" x2="150" y2="186" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
-          <line x1="108" y1="186" x2="192" y2="186" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
-          <line x1="108" y1="186" x2="108" y2="194" stroke="rgba(255,255,255,.14)" stroke-width="1" marker-end="url(#arr-of)"/>
-          <line x1="192" y1="186" x2="192" y2="194" stroke="rgba(255,255,255,.14)" stroke-width="1" marker-end="url(#arr-of)"/>
+          <line x1="68" y1="64" x2="68" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
+          <!-- > 4 sem (c=218) → Sin OS (c=155) / Con OS (c=238) — barra en y=68 -->
+          <line x1="218" y1="64" x2="218" y2="68" stroke="rgba(255,255,255,.2)" stroke-width="1.05"/>
+          <line x1="155" y1="68" x2="238" y2="68" stroke="rgba(255,255,255,.2)" stroke-width="1.05"/>
+          <line x1="155" y1="68" x2="155" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
+          <line x1="238" y1="68" x2="238" y2="76" stroke="rgba(255,255,255,.2)" stroke-width="1.05" marker-end="url(#arr-of)"/>
+          <!-- Con OS (c=238) → Flojo (c=214) / Firme (c=264) -->
+          <line x1="238" y1="94" x2="238" y2="104" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+          <line x1="214" y1="104" x2="264" y2="104" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+          <line x1="214" y1="104" x2="214" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1" marker-end="url(#arr-of)"/>
+          <line x1="264" y1="104" x2="264" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1" marker-end="url(#arr-of)"/>
+          <!-- All paths → TTO — Sin OS (x=155) corre IZQUIERDA de Flojo (x=190+) -->
+          <line x1="68"  y1="94" x2="68"  y2="152" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+          <line x1="155" y1="94" x2="155" y2="152" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+          <line x1="214" y1="134" x2="214" y2="152" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+          <line x1="264" y1="134" x2="264" y2="152" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+          <line x1="68"  y1="152" x2="264" y2="152" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
+          <line x1="150" y1="152" x2="150" y2="160" stroke="rgba(255,255,255,.16)" stroke-width="1" marker-end="url(#arr-of)"/>
+          <!-- TTO → Sin FR / Con FR -->
+          <line x1="150" y1="178" x2="150" y2="192" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+          <line x1="108" y1="192" x2="190" y2="192" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+          <line x1="108" y1="192" x2="108" y2="202" stroke="rgba(255,255,255,.14)" stroke-width="1" marker-end="url(#arr-of)"/>
+          <line x1="190" y1="192" x2="190" y2="202" stroke="rgba(255,255,255,.14)" stroke-width="1" marker-end="url(#arr-of)"/>
 
           <!-- NODES -->
           <rect id="of-mm-of_start" x="101" y="4" width="98" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_start')"/>
           <text id="of-mmt-of_start" x="150" y="16" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.1" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">Sospecha clínica</text>
 
-          <rect id="of-mm-of_early" x="18" y="46" width="108" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_early')"/>
-          <text id="of-mmt-of_early" x="72" y="58" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">&lt; 4 semanas</text>
+          <rect id="of-mm-of_early" x="18" y="46" width="100" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_early')"/>
+          <text id="of-mmt-of_early" x="68" y="58" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">&lt; 4 semanas</text>
 
-          <rect id="of-mm-of_late_route" x="174" y="46" width="108" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_route')"/>
-          <text id="of-mmt-of_late_route" x="228" y="58" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">&gt; 4 semanas</text>
+          <rect id="of-mm-of_late_route" x="168" y="46" width="100" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_route')"/>
+          <text id="of-mmt-of_late_route" x="218" y="58" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">&gt; 4 semanas</text>
 
-          <rect x="25" y="76" width="94" height="18" rx="5" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.18)" stroke-width="1" style="cursor:pointer" onclick="ofJumpTo('of_early')"/>
-          <text x="72" y="88" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con o sin OS</text>
+          <!-- Con o sin OS: visual only, same action as of_early -->
+          <rect x="24" y="76" width="88" height="18" rx="5" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.18)" stroke-width="1" style="cursor:pointer" onclick="ofJumpTo('of_early')"/>
+          <text x="68" y="88" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con o sin OS</text>
 
-          <rect id="of-mm-of_late_no_implant" x="146" y="76" width="80" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_no_implant')"/>
-          <text id="of-mmt-of_late_no_implant" x="186" y="88" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin OS</text>
+          <!-- Sin OS: x=118 w=74 c=155; DERECHA de Con o sin OS (right=112) y IZQUIERDA de Flojo (left=190) -->
+          <rect id="of-mm-of_late_no_implant" x="118" y="76" width="74" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_no_implant')"/>
+          <text id="of-mmt-of_late_no_implant" x="155" y="88" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin OS</text>
 
-          <rect id="of-mm-of_late_implant_route" x="230" y="76" width="58" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_implant_route')"/>
-          <text id="of-mmt-of_late_implant_route" x="259" y="88" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con OS</text>
+          <!-- Con OS: x=212 w=52 c=238 -->
+          <rect id="of-mm-of_late_implant_route" x="212" y="76" width="52" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_implant_route')"/>
+          <text id="of-mmt-of_late_implant_route" x="238" y="88" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con OS</text>
 
-          <rect id="of-mm-of_late_loose" x="170" y="116" width="52" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_loose')"/>
-          <text id="of-mmt-of_late_loose" x="196" y="128" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.7" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Flojo</text>
+          <!-- Flojo: x=190 w=48 c=214 — izquierda de Sin OS line está en x=155 < 190 ✓ -->
+          <rect id="of-mm-of_late_loose" x="190" y="116" width="48" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_loose')"/>
+          <text id="of-mmt-of_late_loose" x="214" y="128" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.7" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Flojo</text>
 
-          <rect id="of-mm-of_late_firm" x="252" y="116" width="52" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_firm')"/>
-          <text id="of-mmt-of_late_firm" x="278" y="128" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.7" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Firme</text>
+          <!-- Firme: x=242 w=48 c=266; right edge=290 -->
+          <rect id="of-mm-of_late_firm" x="242" y="116" width="48" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_late_firm')"/>
+          <text id="of-mmt-of_late_firm" x="266" y="128" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.7" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Firme</text>
 
-          <rect id="of-mm-of_tx_route" x="112" y="156" width="76" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_route')"/>
-          <text id="of-mmt-of_tx_route" x="150" y="168" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">TTO Empírico</text>
+          <!-- TTO: x=112 w=76 c=150 -->
+          <rect id="of-mm-of_tx_route" x="112" y="160" width="76" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_route')"/>
+          <text id="of-mmt-of_tx_route" x="150" y="172" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">TTO Empírico</text>
 
-          <rect id="of-mm-of_tx_low" x="81" y="194" width="54" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_low')"/>
-          <text id="of-mmt-of_tx_low" x="108" y="206" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin FR</text>
+          <!-- Sin FR: x=82 w=52 c=108 -->
+          <rect id="of-mm-of_tx_low" x="82" y="202" width="52" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_low')"/>
+          <text id="of-mmt-of_tx_low" x="108" y="214" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin FR</text>
 
-          <rect id="of-mm-of_tx_mdr" x="165" y="194" width="54" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_mdr')"/>
-          <text id="of-mmt-of_tx_mdr" x="192" y="206" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con FR</text>
+          <!-- Con FR: x=164 w=52 c=190 -->
+          <rect id="of-mm-of_tx_mdr" x="164" y="202" width="52" height="18" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ofJumpTo('of_tx_mdr')"/>
+          <text id="of-mmt-of_tx_mdr" x="190" y="214" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con FR</text>
         </svg>
       </div>
       <div style="display:flex;justify-content:center;padding:2px 0 4px">
