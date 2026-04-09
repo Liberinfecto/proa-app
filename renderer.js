@@ -2121,6 +2121,7 @@ function renderNodeAR(nodeId) {
             <div style="font-size:11px;line-height:1.4;margin-top:5px">qSOFA ≥ 2</div>
           </div>
         </div>
+        <div class="note-box" style="margin-top:10px;background:#fee2e2;border-left:3px solid #dc2626;color:#7f1d1d;font-weight:700;text-align:center">Inicie ATB Empírico y continúe con el algoritmo diagnóstico</div>
         <button class="btn-tables" onclick="showTablesAR(0)" style="margin-top:10px">📋 Ver qSOFA</button>
       </div>
       <div class="triangle-nav-wrap">
