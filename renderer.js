@@ -2119,9 +2119,9 @@ function renderNodeAR(nodeId) {
           <div style="background:linear-gradient(160deg,#fde68a 0%,#facc15 100%);border-radius:12px;padding:12px 10px;color:#713f12;box-shadow:var(--shadow-md);text-align:center">
             <div style="font-size:12px;font-weight:800;line-height:1.3">Paciente inestable</div>
             <div style="font-size:11px;line-height:1.4;margin-top:5px">qSOFA ≥ 2</div>
+            <div style="font-size:11px;font-weight:700;line-height:1.4;margin-top:6px;padding-top:6px;border-top:1px solid rgba(113,63,18,.25)">Inicie ATB empírico y continúe con el algoritmo diagnóstico</div>
           </div>
         </div>
-        <div class="note-box" style="margin-top:10px;background:#fee2e2;border-left:3px solid #dc2626;color:#7f1d1d;font-weight:700;text-align:center">Inicie ATB Empírico y continúe con el algoritmo diagnóstico</div>
         <button class="btn-tables" onclick="showTablesAR(0)" style="margin-top:10px">📋 Ver qSOFA</button>
       </div>
       <div class="triangle-nav-wrap">
