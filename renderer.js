@@ -2987,6 +2987,10 @@ function showTablesOV(idx) {
   showScreen('osteo_v-tables');
   renderOVTablesUI(idx || 0);
 }
+function showImagesOV() {
+  document.getElementById('ov-images-back-btn').onclick = () => showScreen('osteo_v');
+  showScreen('osteo_v-images');
+}
 function renderOVTablesUI(idx) {
   ov_activeTabIndex = idx;
   document.getElementById('ov-tabs-bar').innerHTML = OSTEO_V_TABLES.map((t, i) =>

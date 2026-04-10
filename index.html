@@ -1051,6 +1051,7 @@
           <p id="ov-step-sublabel">Sospecha clínica</p>
         </div>
         <button class="proa-pill" onclick="showTablesOV(0)">Tablas</button>
+        <button class="proa-pill" onclick="showImagesOV()" style="margin-left:6px">Imágenes</button>
       </div>
       <div class="minimap-panel" id="ov-minimap-panel">
         <svg id="ov-minimap-svg" viewBox="0 0 320 138" width="100%" style="display:block;overflow:visible">
@@ -1117,6 +1118,32 @@
     <div class="tabs-bar" id="ov-tabs-bar"></div>
     <div class="screen-scroll" style="overflow:hidden;display:flex;flex-direction:column;flex:1">
       <div id="ov-tables-panels" style="display:flex;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+
+  <!-- ═══ OSTEOMIELITIS VERTEBRAL IMAGES ═══ -->
+  <div id="screen-osteo_v-images" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" id="ov-images-back-btn">←</button>
+        <div class="header-title">
+          <h1>Imágenes</h1>
+          <p>Osteomielitis Vertebral · G-15</p>
+        </div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="screen-scroll">
+      <div style="padding:16px 14px 32px">
+        <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.1);overflow:hidden">
+          <img src="images/ov_rx_01.jpg" alt="Osteomielitis vertebral - RX y TC" style="width:100%;display:block">
+          <div style="padding:14px 16px">
+            <p style="font-size:12.5px;color:#374151;line-height:1.6;margin:0">
+              Una radiografía lateral de la columna lumbar (<strong>A</strong>) muestra erosión festoneada de los cuerpos vertebrales L2 y L3 (flechas). La imagen <strong>B</strong> es una vista ampliada de un absceso (flecha) que rodea el injerto aórtico (punta de flecha) y erosiona el cuerpo vertebral (flecha discontinua). La imagen <strong>C</strong> es una ventana ósea de L3 que muestra la destrucción del cuerpo vertebral por el absceso periprotésico.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
