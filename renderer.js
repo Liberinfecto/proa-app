@@ -2348,9 +2348,10 @@ function renderARTablesUI(idx) {
         ${s.items.map(item => `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
       </div>
     `).join('');
+    const scrollable = t.id === 'ar_micro';
     return `
       <div class="table-swipe-card" id="ar-swipe-card-${i}">
-        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+        <div class="table-swipe-inner" style="${scrollable ? 'overflow-y:auto;max-height:calc(100vh - 200px);-webkit-overflow-scrolling:touch' : 'height:auto;min-height:0;overflow-y:visible'}">
           <div class="table-swipe-head">${t.title}</div>
           ${sectionsHTML}
         </div>
@@ -3009,7 +3010,7 @@ function renderOVTablesUI(idx) {
     }
     if (t.type === 'ov_micro_table') {
       return `<div class="table-swipe-card" id="ov-swipe-card-${i}">
-        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+        <div class="table-swipe-inner" style="overflow-y:auto;max-height:calc(100vh - 200px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head">${t.title}</div>
           <div style="padding:10px 10px">
             <table class="tbl" style="font-size:11px">
