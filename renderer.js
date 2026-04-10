@@ -2991,6 +2991,74 @@ function showImagesOV() {
   document.getElementById('ov-images-back-btn').onclick = () => showScreen('osteo_v');
   showScreen('osteo_v-images');
 }
+
+// ── Image Lightbox with pinch-to-zoom ──────────────────────────────────────
+let _lbScale = 1, _lbPosX = 0, _lbPosY = 0;
+let _lbStartDist = 0, _lbStartScale = 1;
+let _lbLastX = 0, _lbLastY = 0;
+let _lbMidX = 0, _lbMidY = 0;
+let _lbListenersAdded = false;
+
+function _lbDist(t) {
+  const dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+function _lbApply() {
+  document.getElementById('lightbox-img').style.transform =
+    `translate(${_lbPosX}px, ${_lbPosY}px) scale(${_lbScale})`;
+}
+function _lbReset() {
+  _lbScale = 1; _lbPosX = 0; _lbPosY = 0; _lbApply();
+}
+
+function openImageLightbox(src) {
+  const modal = document.getElementById('modal-image-lightbox');
+  const img   = document.getElementById('lightbox-img');
+  const cont  = document.getElementById('lightbox-container');
+  img.src = src;
+  _lbReset();
+  modal.style.display = 'flex';
+
+  if (!_lbListenersAdded) {
+    _lbListenersAdded = true;
+
+    cont.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        _lbStartDist  = _lbDist(e.touches);
+        _lbStartScale = _lbScale;
+        _lbMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        _lbMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      } else if (e.touches.length === 1) {
+        _lbLastX = e.touches[0].clientX;
+        _lbLastY = e.touches[0].clientY;
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    cont.addEventListener('touchmove', e => {
+      if (e.touches.length === 2) {
+        const dist  = _lbDist(e.touches);
+        _lbScale    = Math.min(Math.max(_lbStartScale * (dist / _lbStartDist), 1), 5);
+        _lbApply();
+      } else if (e.touches.length === 1 && _lbScale > 1) {
+        _lbPosX += e.touches[0].clientX - _lbLastX;
+        _lbPosY += e.touches[0].clientY - _lbLastY;
+        _lbLastX = e.touches[0].clientX;
+        _lbLastY = e.touches[0].clientY;
+        _lbApply();
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    cont.addEventListener('touchend', e => {
+      if (_lbScale <= 1.05) _lbReset();
+    });
+  }
+}
+function closeImageLightbox() {
+  document.getElementById('modal-image-lightbox').style.display = 'none';
+  _lbReset();
+}
 function renderOVTablesUI(idx) {
   ov_activeTabIndex = idx;
   document.getElementById('ov-tabs-bar').innerHTML = OSTEO_V_TABLES.map((t, i) =>

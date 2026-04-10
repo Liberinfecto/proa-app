@@ -1123,7 +1123,7 @@
 
   <!-- ═══ OSTEOMIELITIS VERTEBRAL IMAGES ═══ -->
   <div id="screen-osteo_v-images" class="screen">
-    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none;flex-shrink:0">
       <div class="header-row">
         <button class="back-btn" id="ov-images-back-btn">←</button>
         <div class="header-title">
@@ -1132,18 +1132,33 @@
         </div>
       </div>
     </div>
-    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
-    <div class="screen-scroll">
-      <div style="padding:16px 14px 32px">
-        <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.1);overflow:hidden">
-          <img src="images/ov_rx_01.jpg" alt="Osteomielitis vertebral - RX y TC" style="width:100%;display:block">
-          <div style="padding:14px 16px">
-            <p style="font-size:12.5px;color:#374151;line-height:1.6;margin:0">
-              Una radiografía lateral de la columna lumbar (<strong>A</strong>) muestra erosión festoneada de los cuerpos vertebrales L2 y L3 (flechas). La imagen <strong>B</strong> es una vista ampliada de un absceso (flecha) que rodea el injerto aórtico (punta de flecha) y erosiona el cuerpo vertebral (flecha discontinua). La imagen <strong>C</strong> es una ventana ósea de L3 que muestra la destrucción del cuerpo vertebral por el absceso periprotésico.
-            </p>
-          </div>
-        </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18);flex-shrink:0"></div>
+    <!-- Image area: fills available space -->
+    <div style="flex:1;overflow:hidden;padding:12px 14px 8px;min-height:0">
+      <div style="height:100%;background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.1);overflow:hidden;cursor:zoom-in;display:flex;align-items:center;justify-content:center"
+           onclick="openImageLightbox('images/ov_rx_01.jpg')">
+        <img src="images/ov_rx_01.jpg" alt="Osteomielitis vertebral - RX y TC" style="width:100%;display:block;object-fit:contain">
       </div>
+    </div>
+    <!-- Caption: fixed at bottom -->
+    <div style="flex-shrink:0;padding:0 14px 20px">
+      <div style="background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;padding:12px 14px">
+        <p style="font-size:12px;color:#374151;line-height:1.6;margin:0">
+          Una radiografía lateral de la columna lumbar (<strong>A</strong>) muestra erosión festoneada de los cuerpos vertebrales L2 y L3 (flechas). La imagen <strong>B</strong> es una vista ampliada de un absceso (flecha) que rodea el injerto aórtico (punta de flecha) y erosiona el cuerpo vertebral (flecha discontinua). La imagen <strong>C</strong> es una ventana ósea de L3 que muestra la destrucción del cuerpo vertebral por el absceso periprotésico.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ IMAGE LIGHTBOX ═══ -->
+  <div id="modal-image-lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:#000;flex-direction:column">
+    <button onclick="closeImageLightbox()"
+      style="position:absolute;top:16px;right:16px;z-index:2;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:20px;width:38px;height:38px;border-radius:50%;cursor:pointer;line-height:1;font-family:inherit">✕</button>
+    <div id="lightbox-container" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none">
+      <img id="lightbox-img" src="" alt="" style="max-width:100%;max-height:100%;display:block;transform-origin:center center;will-change:transform;user-select:none;-webkit-user-drag:none">
+    </div>
+    <div style="flex-shrink:0;padding:10px 16px 24px;text-align:center">
+      <p style="font-size:10px;color:rgba(255,255,255,.5);margin:0">Pellizca para hacer zoom · Toca ✕ para cerrar</p>
     </div>
   </div>
 
