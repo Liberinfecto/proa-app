@@ -8,7 +8,7 @@ const GUIDES = [
   { id:'pie',      icon:'🦶', bg:'#fef3c7', name:'Infección en Pie Diabético',                                                  ok:true  },
   { id:'nac',      icon:'🫁', bg:'#e0f2fe', name:'Neumonía Aguda',                                                              ok:true  },
   { id:'nih',      icon:'🏥', bg:'#e0f2fe', name:'Neumonía Intrahospitalaria',                                                  ok:true  },
-  { id:'nav',      icon:'💨', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:false },
+  { id:'nav',      icon:'💨', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:true  },
   { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:false },
   { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:false },
   { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:false },
@@ -349,6 +349,19 @@ const OV_JUMP_PATHS = {
   ov_noinst_mdr: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_noinst_risk'],
   ov_inst_low: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_inst_risk'],
   ov_inst_mdr: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_inst_risk'],
+};
+
+/* ── NAV STATE ── */
+let nav_currentNode = 'nav_start';
+let nav_history     = [];
+let nav_activeTabIndex = 0;
+const NAV_TOTAL_STEPS = 3;
+const NAV_MM_IDS = ['nav_start','nav_cpis','nav_early','nav_late'];
+const NAV_JUMP_PATHS = {
+  'nav_start': [],
+  'nav_cpis':  ['nav_start'],
+  'nav_early': ['nav_start','nav_cpis'],
+  'nav_late':  ['nav_start','nav_cpis'],
 };
 
 /* ── NIH STATE ── */
@@ -3135,6 +3148,317 @@ function ovScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   NEUMONÍA ASOCIADA A LA VENTILACIÓN MECÁNICA — NAV
+═══════════════════════════════════════════════ */
+function navGoBack() {
+  if (nav_history.length > 0) {
+    nav_currentNode = nav_history.pop();
+    renderNodeNAV(nav_currentNode);
+  } else { goHome(); }
+}
+function navNavigate(nodeId) {
+  nav_history.push(nav_currentNode);
+  nav_currentNode = nodeId;
+  renderNodeNAV(nodeId);
+}
+function navRestart() {
+  nav_history = [];
+  nav_currentNode = 'nav_start';
+  renderNodeNAV('nav_start');
+}
+function navJumpTo(id) {
+  if (id === nav_currentNode) return;
+  if (NAV_JUMP_PATHS[id] !== undefined) {
+    nav_history = [...NAV_JUMP_PATHS[id]];
+    nav_currentNode = id;
+    renderNodeNAV(id);
+  }
+}
+function toggleMinimapNAV() {
+  const panel = document.getElementById('nav-minimap-panel');
+  const btn   = document.getElementById('nav-minimap-arrow-btn');
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapNAV(nodeId) {
+  NAV_MM_IDS.forEach(id => {
+    const rect = document.getElementById('nav-mm-' + id);
+    const txt  = document.getElementById('nav-mmt-' + id);
+    if (!rect) return;
+    const isCurrent = id === nodeId;
+    const isVisited = nav_history.includes(id);
+    rect.setAttribute('fill',
+      isCurrent ? '#f59e0b' :
+      isVisited ? 'rgba(255,255,255,.28)' :
+      'rgba(255,255,255,.1)'
+    );
+    rect.setAttribute('stroke', isCurrent ? '#fbbf24' : 'none');
+    rect.setAttribute('stroke-width', isCurrent ? '2' : '0');
+    if (txt) txt.setAttribute('fill',
+      isCurrent ? '#1e293b' :
+      isVisited ? 'rgba(255,255,255,.85)' :
+      'rgba(255,255,255,.45)'
+    );
+  });
+}
+
+/* ═════════════════════════════════════════════
+   NEUMONÍA ASOCIADA A LA VENTILACIÓN MECÁNICA — RENDER
+═══════════════════════════════════════════════ */
+function renderNodeNAV(nodeId) {
+  const node = NODES_NAV[nodeId];
+  if (!node) return;
+
+  const pct  = Math.round(((node.step - 1) / NAV_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('nav-progress-fill');
+  const ptxt = document.getElementById('nav-progress-txt');
+  const path = document.getElementById('nav-path-txt');
+  const sub  = document.getElementById('nav-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (ptxt) ptxt.textContent = '';
+  if (path) path.textContent = nav_history.length > 0 ? `${nav_history.length} paso${nav_history.length > 1 ? 's' : ''} atrás` : '';
+
+  const sublabels = {
+    nav_start: 'Sospecha y microbiología',
+    nav_cpis:  'Diagnóstico inicial',
+    nav_early: 'Tratamiento NAV precoz',
+    nav_late:  'Tratamiento NAV tardía',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || '';
+
+  let html = '';
+
+  if (node.type === 'nav_start') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+      </div>
+    `).join('');
+
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0ea5b7 0%,#0d7488 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:4px;text-transform:uppercase;letter-spacing:.8px">${node.subtitle}</div>
+        </div>
+        ${sectionsHTML}
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="navNavigate('${node.next}')">
+          <div class="tri"></div>
+          <span>Siguiente</span>
+        </button>
+      </div>`;
+  }
+
+  else if (node.type === 'nav_question') {
+    html = `
+      <div class="step-card">
+        <div style="display:flex;justify-content:center">
+          <div class="step-badge" style="background:#e0f2fe;color:#0c4a6e;font-size:12px;padding:6px 12px;letter-spacing:.2px;white-space:nowrap;text-align:center">${node.badgeText}</div>
+        </div>
+        ${node.note ? `<div class="alert-box" style="margin-top:12px">${node.note}</div>` : ''}
+        <div class="note-box" style="margin-top:12px">
+          ${node.checklist.map(item => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0">
+              <div style="font-size:12px;color:#334155;line-height:1.35;flex:1">${item.text}</div>
+              ${typeof item.tableIndex === 'number' ? `<button class="btn-tables" onclick="showTablesNAV(${item.tableIndex})" style="width:auto;min-width:auto;padding:7px 10px;font-size:11px;border-radius:10px;box-shadow:none;flex-shrink:0;align-self:center;margin-top:0">📋 ${item.tableLabel}</button>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="navNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '🚨' : '💨'}</div>
+            <div class="origin-choice-body" style="display:flex;flex-direction:column;justify-content:center;min-height:38px">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${opt.color};margin-top:2px">${opt.desc}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>
+        `).join('')}
+        <button class="btn-back" onclick="navGoBack()">← Volver</button>
+      </div>`;
+  }
+
+  else if (node.type === 'nav_treatment') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-top:6px">${node.subtitle}</p>
+      </div>
+      <div class="treatment-body">
+        ${node.introAlert ? `<div class="alert-box" style="margin-bottom:12px">${node.introAlert}</div>` : ''}
+        ${node.regimens.map(r => `
+          <div class="regimen-block" style="background:${r.bg}">
+            <div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>
+            ${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}
+          </div>
+        `).join('')}
+        ${node.notes ? `
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-top:10px">
+            ${node.notes.map(item => `
+              <div style="font-size:12px;color:#334155;line-height:1.45;margin-bottom:5px">
+                <span>• ${typeof item === 'string' ? item : item.text}</span>
+                ${typeof item === 'object' && typeof item.tableIndex === 'number'
+                  ? `<button class="btn-tables" onclick="showTablesNAV(${item.tableIndex})" style="display:inline-flex;width:auto;min-width:auto;padding:5px 8px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-left:6px;vertical-align:middle">📋 ${item.tableLabel}</button>`
+                  : ''}
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+        ${node.durationLabel ? `
+          <div style="margin-top:10px;background:${node.durationBg};color:${node.durationText};border-radius:10px;padding:10px 12px;font-size:12px;font-weight:800;text-align:center">
+            ${node.durationLabel}
+          </div>
+        ` : ''}
+        <div class="divider"></div>
+        <button class="btn-tables" onclick="showTablesNAV(2)">📋 FR de resistencia</button>
+        <button class="btn-tables" onclick="showTablesNAV(3)" style="margin-top:8px">📋 Reevaluación 48 / 72 hs</button>
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="navGoBack()">← Volver</button>
+        <button class="btn-back" onclick="navRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('nav-flow-body');
+  body.innerHTML = html;
+  window.scrollTo(0, 0);
+  updateMinimapNAV(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   NAV TABLES
+═══════════════════════════════════════════════ */
+function showTablesNAV(idx) {
+  document.getElementById('nav-tables-back-btn').onclick = () => showScreen('nav');
+  showScreen('nav-tables');
+  renderNAVTablesUI(idx || 0);
+}
+
+function renderNAVTablesUI(idx) {
+  nav_activeTabIndex = idx;
+  document.getElementById('nav-tabs-bar').innerHTML = NAV_TABLES.map((t, i) =>
+    `<button class="tab-btn${i===idx?' active':''}" onclick="navSwipeToTable(${i})">${t.label}</button>`
+  ).join('');
+
+  const cardsHTML = NAV_TABLES.map((t, i) => {
+    if (t.type === 'nav_etiology') {
+      const cards = t.sections.map((s, sectionIndex) => {
+        const isMain = sectionIndex === 0;
+        return `
+          <div style="padding:12px;border-bottom:1px solid #e8f0f7;${isMain ? 'background:linear-gradient(180deg,#eff6ff 0%,#ffffff 100%);' : 'background:#ffffff;'}">
+            <div style="display:inline-flex;align-items:center;gap:6px;background:${isMain ? '#dbeafe' : '#f1f5f9'};color:${isMain ? '#1d4ed8' : '#334155'};border:1px solid ${isMain ? '#93c5fd' : '#cbd5e1'};border-radius:999px;padding:5px 10px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">${s.head}</div>
+            ${s.items.map((item, itemIndex) => `
+              <div style="font-size:${isMain && itemIndex === 1 ? '12.5px' : '12px'};color:#1e293b;line-height:1.5;margin-bottom:${isMain && itemIndex === 0 ? '8px' : '6px'};${isMain && itemIndex === 1 ? 'font-weight:600;' : ''}">
+                • ${item}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="table-swipe-card" id="nav-swipe-card-${i}">
+          <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+            <div class="table-swipe-head">${t.title}</div>
+            ${cards}
+          </div>
+        </div>`;
+    }
+
+    const sectionsHTML = t.sections.map(s => {
+      const rawNote = s.table && typeof s.table.note === 'string' ? s.table.note.trim() : '';
+      const noteHTML = rawNote && rawNote !== 'undefined' ? `<div class="tbl-note" style="margin:8px 0 0">${rawNote}</div>` : '';
+      const sectionStyle = s.tone === 'alert'
+        ? 'padding:12px;border-bottom:1px solid #fecaca;background:#fff5f5;'
+        : 'padding:10px 11px;border-bottom:1px solid #e8f0f7';
+      const headingStyle = s.tone === 'alert'
+        ? 'font-size:11px;font-weight:800;color:#b91c1c;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px'
+        : 'font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px';
+      const itemColor = s.tone === 'alert' ? '#7f1d1d' : '#1e293b';
+      return `
+        <div style="${sectionStyle}">
+          <div style="${headingStyle}">${s.head}</div>
+          ${s.table ? `
+            <table class="tbl" style="margin-top:4px">
+              <thead>
+                <tr>
+                  ${s.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${s.table.rows.map(r => `
+                  <tr>
+                    ${r.map((cell, ci) => `<td style="font-size:11.5px;${ci>0 ? 'color:#334155;' : ''}">${cell}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            ${noteHTML}
+          ` : s.items.map(item => `<div style="font-size:12px;color:${itemColor};line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="table-swipe-card" id="nav-swipe-card-${i}">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+          <div class="table-swipe-head">${t.title}</div>
+          ${sectionsHTML}
+        </div>
+      </div>`;
+  }).join('');
+
+  const dotsHTML = NAV_TABLES.map((_, i) =>
+    `<div class="swipe-dot${i===idx?' active':''}" onclick="navSwipeToTable(${i})"></div>`
+  ).join('');
+
+  document.getElementById('nav-tables-panels').innerHTML = `
+    <div class="tables-swipe-container" id="nav-tables-swipe">${cardsHTML}</div>
+    <div class="swipe-dot-nav">${dotsHTML}</div>`;
+
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('nav-tables-swipe');
+    if (!scroller) return;
+    scroller.scrollLeft = idx * scroller.clientWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== nav_activeTabIndex) {
+          nav_activeTabIndex = active;
+          document.querySelectorAll('#nav-tabs-bar .tab-btn').forEach((b, j) => b.classList.toggle('active', j === active));
+          document.querySelectorAll('#screen-nav-tables .swipe-dot').forEach((d, j) => d.classList.toggle('active', j === active));
+          navScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+
+function navSwipeToTable(i) {
+  nav_activeTabIndex = i;
+  document.querySelectorAll('#nav-tabs-bar .tab-btn').forEach((b, j) => b.classList.toggle('active', j === i));
+  document.querySelectorAll('#screen-nav-tables .swipe-dot').forEach((d, j) => d.classList.toggle('active', j === i));
+  const scroller = document.getElementById('nav-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  navScrollTabIntoView(i);
+}
+function navScrollTabIntoView(i) {
+  const bar = document.getElementById('nav-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+
+/* ═════════════════════════════════════════════
    NEUMONÍA INTRAHOSPITALARIA — NAV
 ═══════════════════════════════════════════════ */
 function nihGoBack() {
@@ -4057,6 +4381,10 @@ function startGuide(id) {
     ov_history = []; ov_currentNode = 'ov_start';
     showScreen('osteo_v');
     renderNodeOV('ov_start');
+  } else if (id === 'nav') {
+    nav_history = []; nav_currentNode = 'nav_start';
+    showScreen('nav');
+    renderNodeNAV('nav_start');
   }
 }
 

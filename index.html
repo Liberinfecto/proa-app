@@ -915,6 +915,85 @@
     </div>
   </div>
 
+  <!-- ═══ NAV FLOWCHART ═══ -->
+  <div id="screen-nav" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="header-title">
+          <h1>NAV</h1>
+          <p id="nav-step-sublabel">Sospecha y microbiología</p>
+        </div>
+        <button class="proa-pill" onclick="showTablesNAV(0)">Tablas</button>
+      </div>
+      <div class="minimap-panel" id="nav-minimap-panel">
+        <svg id="nav-minimap-svg" viewBox="0 0 330 108" width="100%" style="display:block;overflow:visible">
+          <defs>
+            <marker id="arr-nav" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+              <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
+            </marker>
+          </defs>
+          <!-- NAV → CPIS -->
+          <line x1="165" y1="25" x2="165" y2="35" stroke="rgba(255,255,255,.25)" stroke-width="1.5" marker-end="url(#arr-nav)"/>
+          <!-- CPIS → bifurcación -->
+          <line x1="165" y1="55" x2="165" y2="62" stroke="rgba(255,255,255,.22)" stroke-width="1.3"/>
+          <line x1="78"  y1="62" x2="252" y2="62" stroke="rgba(255,255,255,.22)" stroke-width="1.3"/>
+          <line x1="78"  y1="62" x2="78"  y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-nav)"/>
+          <line x1="252" y1="62" x2="252" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-nav)"/>
+
+          <rect id="nav-mm-nav_start" x="105" y="5" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="navJumpTo('nav_start')"/>
+          <text id="nav-mmt-nav_start" x="165" y="18" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="8.5" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">NAV</text>
+
+          <rect id="nav-mm-nav_cpis" x="105" y="35" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="navJumpTo('nav_cpis')"/>
+          <text id="nav-mmt-nav_cpis" x="165" y="48" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="8.5" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">CPIS &gt; 6</text>
+
+          <rect id="nav-mm-nav_early" x="18" y="68" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="navJumpTo('nav_early')"/>
+          <text id="nav-mmt-nav_early" x="78" y="81" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.5" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">NAV precoz</text>
+
+          <rect id="nav-mm-nav_late" x="192" y="68" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="navJumpTo('nav_late')"/>
+          <text id="nav-mmt-nav_late" x="252" y="81" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.5" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">NAV tardía</text>
+
+          <circle cx="10" cy="100" r="4" fill="#f59e0b"/>
+          <text x="18" y="104" fill="rgba(255,255,255,.4)" font-size="7.5" font-family="system-ui,sans-serif">posición actual</text>
+          <rect x="148" y="95" width="10" height="8" rx="2" fill="rgba(255,255,255,.28)"/>
+          <text x="162" y="104" fill="rgba(255,255,255,.4)" font-size="7.5" font-family="system-ui,sans-serif">visitado</text>
+        </svg>
+      </div>
+      <div style="display:flex;justify-content:center;padding:2px 0 4px">
+        <button id="nav-minimap-arrow-btn" onclick="toggleMinimapNAV()"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+                 color:rgba(255,255,255,.7);border-radius:20px;padding:3px 16px;
+                 font-size:13px;cursor:pointer;line-height:1;transition:background .15s;font-family:inherit">▼</button>
+      </div>
+      <div class="flow-progress">
+        <div class="progress-track"><div class="progress-fill" id="nav-progress-fill" style="width:0%"></div></div>
+        <div class="progress-info"><span id="nav-progress-txt"></span><span id="nav-path-txt"></span></div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="screen-scroll">
+      <div class="flow-body" id="nav-flow-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══ NAV TABLES ═══ -->
+  <div id="screen-nav-tables" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" id="nav-tables-back-btn">←</button>
+        <div class="header-title">
+          <h1>Tablas de Referencia</h1>
+          <p>Neumonía Asociada a la Ventilación · G-7</p>
+        </div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="tabs-bar" id="nav-tabs-bar"></div>
+    <div class="screen-scroll" style="overflow:hidden;display:flex;flex-direction:column;flex:1">
+      <div id="nav-tables-panels" style="display:flex;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+
   <!-- ═══ OSTEOMIELITIS VINCULADA A FRACTURA ═══ -->
   <div id="screen-osteo_f" class="screen">
     <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
@@ -1275,6 +1354,7 @@
 <script src="flowcharts/artritis.js"></script>
 <script src="flowcharts/osteo_f.js"></script>
 <script src="flowcharts/osteo_v.js"></script>
+<script src="flowcharts/nav.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>
