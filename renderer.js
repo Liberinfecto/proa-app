@@ -9,7 +9,7 @@ const GUIDES = [
   { id:'nac',      icon:'🫁', bg:'#e0f2fe', name:'Neumonía Aguda',                                                              ok:true  },
   { id:'nih',      icon:'🏥', bg:'#e0f2fe', name:'Neumonía Intrahospitalaria',                                                  ok:true  },
   { id:'nav',      icon:'🩻', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:true  },
-  { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:false },
+  { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:true  },
   { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:false },
   { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:false },
   { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:false },
@@ -349,6 +349,33 @@ const OV_JUMP_PATHS = {
   ov_noinst_mdr: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_noinst_risk'],
   ov_inst_low: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_inst_risk'],
   ov_inst_mdr: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_inst_risk'],
+};
+
+/* ── ITU STATE ── */
+let itu_currentNode = 'itu_start';
+let itu_history     = [];
+let itu_activeTabIndex = 0;
+const ITU_TOTAL_STEPS = 4;
+const ITU_MM_IDS = ['itu_start','itu_route','itu_amb','itu_inp','itu_low_simple','itu_pyelo_nc','itu_pyelo_comp','itu_sepsis'];
+const ITU_JUMP_PATHS = {
+  'itu_start':         [],
+  'itu_route':         ['itu_start'],
+  'itu_amb':           ['itu_start','itu_route'],
+  'itu_inp':           ['itu_start','itu_route'],
+  'itu_low_simple':    ['itu_start','itu_route','itu_amb'],
+  'itu_low_preg':      ['itu_start','itu_route','itu_amb'],
+  'itu_low_comp':      ['itu_start','itu_route','itu_amb'],
+  'itu_prost_acute':   ['itu_start','itu_route','itu_amb'],
+  'itu_prost_chronic': ['itu_start','itu_route','itu_amb'],
+  'itu_pyelo_nc':      ['itu_start','itu_route','itu_amb'],
+  'itu_orqui':         ['itu_start','itu_route','itu_amb'],
+  'itu_cat_low':       ['itu_start','itu_route','itu_amb'],
+  'itu_pyelo_comp':    ['itu_start','itu_route','itu_inp'],
+  'itu_pyelo_preg':    ['itu_start','itu_route','itu_inp'],
+  'itu_abscess':       ['itu_start','itu_route','itu_inp'],
+  'itu_prost_comp':    ['itu_start','itu_route','itu_inp'],
+  'itu_cat_sys':       ['itu_start','itu_route','itu_inp'],
+  'itu_sepsis':        ['itu_start','itu_route','itu_inp'],
 };
 
 /* ── NAV STATE ── */
@@ -3148,6 +3175,389 @@ function ovScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   INFECCIÓN DEL TRACTO URINARIO — ITU
+═══════════════════════════════════════════════ */
+function ituGoBack() {
+  if (itu_history.length > 0) {
+    itu_currentNode = itu_history.pop();
+    renderNodeITU(itu_currentNode);
+  } else { goHome(); }
+}
+function ituNavigate(nodeId) {
+  itu_history.push(itu_currentNode);
+  itu_currentNode = nodeId;
+  renderNodeITU(nodeId);
+}
+function ituRestart() {
+  itu_history = [];
+  itu_currentNode = 'itu_start';
+  renderNodeITU('itu_start');
+}
+function ituJumpTo(id) {
+  if (id === itu_currentNode) return;
+  if (ITU_JUMP_PATHS[id] !== undefined) {
+    itu_history = [...ITU_JUMP_PATHS[id]];
+    itu_currentNode = id;
+    renderNodeITU(id);
+  }
+}
+function toggleMinimapITU() {
+  const panel = document.getElementById('itu-minimap-panel');
+  const btn   = document.getElementById('itu-minimap-arrow-btn');
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? '▲' : '▼';
+}
+function ituToggleExpand(id) {
+  const body  = document.getElementById('itu-exp-' + id);
+  const arrow = document.getElementById('itu-arr-' + id);
+  if (!body) return;
+  const isOpen = body.style.display === 'block';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+function updateMinimapITU(nodeId) {
+  ITU_MM_IDS.forEach(id => {
+    const rect = document.getElementById('itu-mm-' + id);
+    const txt  = document.getElementById('itu-mmt-' + id);
+    if (!rect) return;
+    const isCurrent = id === nodeId;
+    const isVisited = itu_history.includes(id);
+    rect.setAttribute('fill',
+      isCurrent ? '#f59e0b' :
+      isVisited  ? 'rgba(255,255,255,.28)' :
+      'rgba(255,255,255,.1)'
+    );
+    rect.setAttribute('stroke', isCurrent ? '#fbbf24' : 'none');
+    rect.setAttribute('stroke-width', isCurrent ? '2' : '0');
+    if (txt) txt.setAttribute('fill',
+      isCurrent ? '#1e293b' :
+      isVisited  ? 'rgba(255,255,255,.85)' :
+      'rgba(255,255,255,.45)'
+    );
+  });
+}
+
+/* ═════════════════════════════════════════════
+   INFECCIÓN DEL TRACTO URINARIO — RENDER
+═══════════════════════════════════════════════ */
+function renderNodeITU(nodeId) {
+  const node = NODES_ITU[nodeId];
+  if (!node) return;
+
+  const pct  = Math.round(((node.step - 1) / ITU_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('itu-progress-fill');
+  const ptxt = document.getElementById('itu-progress-txt');
+  const path = document.getElementById('itu-path-txt');
+  const sub  = document.getElementById('itu-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (ptxt) ptxt.textContent = '';
+  if (path) path.textContent = itu_history.length > 0 ? `${itu_history.length} paso${itu_history.length > 1 ? 's' : ''} atrás` : '';
+
+  const sublabels = {
+    itu_start: 'Sospecha clínica',
+    itu_route: 'Definir ámbito',
+    itu_amb:   'Escenarios ambulatorios',
+    itu_inp:   'Escenarios internados',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || 'Tratamiento';
+
+  let html = '';
+
+  if (node.type === 'itu_start') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+      </div>
+    `).join('');
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:4px;text-transform:uppercase;letter-spacing:.8px">${node.subtitle}</div>
+        </div>
+        ${sectionsHTML}
+        ${node.alert ? `<div class="alert-box" style="margin-top:14px">${node.alert}</div>` : ''}
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="ituNavigate('${node.next}')">
+          <div class="tri"></div>
+          <span>Siguiente</span>
+        </button>
+      </div>`;
+  }
+
+  else if (node.type === 'itu_route') {
+    html = `
+      <div class="step-card">
+        <h2>${node.title}</h2>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+          ${node.blocks.map((block, idx) => `
+            <div style="background:white;border:1px solid ${idx === 0 ? '#99f6e4' : '#bfdbfe'};border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(15,23,42,.06)">
+              <div style="padding:10px 11px;border-bottom:${block.expandItems || block.secondaryTitle ? '1px solid rgba(226,232,240,.9)' : 'none'};display:flex;align-items:center;justify-content:space-between;gap:10px;background:${idx <= 1 ? 'linear-gradient(180deg,#ecfeff 0%,#ffffff 100%)' : 'linear-gradient(180deg,#eff6ff 0%,#ffffff 100%)'}">
+                <div style="font-size:12px;font-weight:800;color:${idx === 0 ? '#0f766e' : '#1d4ed8'};line-height:1.35">${block.title}</div>
+                ${typeof block.tableIndex === 'number' ? `<button class="btn-tables" onclick="showTablesITU(${block.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;flex-shrink:0;margin-top:0;background:${idx <= 1 ? '#ccfbf1' : '#dbeafe'};border-color:${idx <= 1 ? '#5eead4' : '#93c5fd'};color:${idx <= 1 ? '#115e59' : '#1d4ed8'}">📋 ${block.tableLabel}</button>` : ''}
+              </div>
+              ${block.expandItems ? `
+                <button onclick="ituToggleExpand('route-${idx}')" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 11px;background:white;border:none;border-top:none;cursor:pointer;font-family:inherit">
+                  <span style="font-size:11.5px;font-weight:700;color:#0f766e;text-align:left">${block.expandTitle}</span>
+                  <span id="itu-arr-route-${idx}" style="font-size:12px;color:#0f766e;transition:transform .2s">▼</span>
+                </button>
+                <div id="itu-exp-route-${idx}" style="display:none;padding:0 11px 10px;background:white">
+                  ${block.expandItems.map(item => `<div style="font-size:11.5px;color:#334155;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+                  ${block.extraTableButton ? `<div style="padding-top:6px"><button class="btn-tables" onclick="showTablesITU(${block.extraTableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;background:#ccfbf1;border-color:#5eead4;color:#115e59">📋 ${block.extraTableLabel}</button></div>` : ''}
+                </div>
+              ` : ''}
+              ${block.secondaryTitle ? `
+                <div style="padding:10px 11px;background:white;display:flex;align-items:center;justify-content:space-between;gap:10px">
+                  <div style="font-size:12px;font-weight:800;color:#1d4ed8;line-height:1.35">${block.secondaryTitle}</div>
+                  <button class="btn-tables" onclick="showTablesITU(${block.secondaryTableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;flex-shrink:0;margin-top:0;background:#dbeafe;border-color:#93c5fd;color:#1d4ed8">📋 ${block.secondaryTableLabel}</button>
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+          <div style="background:white;border:1px solid #fecaca;border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(15,23,42,.06)">
+            <div style="padding:10px 11px;background:linear-gradient(180deg,#fff1f2 0%,#ffffff 100%);border-bottom:1px solid rgba(254,202,202,.9)">
+              <div style="font-size:12px;font-weight:800;color:#b91c1c;line-height:1.35">Tratamiento</div>
+            </div>
+            <div style="padding:10px 11px;background:white">
+              <div style="background:linear-gradient(180deg,#dc2626 0%,#b91c1c 100%);color:white;border-radius:10px;padding:9px 10px;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)">
+                <div style="font-size:11px;font-weight:900;letter-spacing:.2px;line-height:1.25">TOMAR EN CUENTA UC PREVIOS.</div>
+                <div style="font-size:10px;font-weight:700;opacity:.95;line-height:1.2;margin-top:3px">Las opciones se presentan en orden de preferencia.</div>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:center">
+                <button class="btn-tables" onclick="showTablesITU(3)" style="width:auto;min-width:auto;padding:7px 10px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;background:#fee2e2;border-color:#fca5a5;color:#991b1b">📋 FR MDR</button>
+                <button class="btn-tables" onclick="showTablesITU(4)" style="width:auto;min-width:auto;padding:7px 10px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;background:#fff7ed;border-color:#fdba74;color:#9a3412">📋 Uso de amikacina</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="ituNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '🏥' : '🏠'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>
+        `).join('')}
+        <button class="btn-back" onclick="ituGoBack()">← Volver</button>
+      </div>`;
+  }
+
+  else if (node.type === 'itu_group') {
+    html = `
+      <div class="step-card">
+        <h2>${node.title}</h2>
+        <p class="sub">${node.subtitle}</p>
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${node.color};background:white" onclick="ituNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${node.color}">${node.color === '#dc2626' ? '🩺' : '💊'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${node.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${node.color}">${opt.tag}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${node.color}">›</div>
+          </button>
+        `).join('')}
+        <button class="btn-back" onclick="ituGoBack()">← Volver</button>
+      </div>`;
+  }
+
+  else if (node.type === 'itu_treatment_dual') {
+    const renderBlocks = blocks => blocks.map(r => `
+      <div class="regimen-block" style="background:${r.bg};margin-bottom:8px">
+        <div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>
+        ${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}
+      </div>
+    `).join('');
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-top:6px">${node.subtitle}</p>
+      </div>
+      <div class="treatment-body">
+        <div style="display:grid;grid-template-columns:1fr;gap:10px">
+          <div style="background:#f8fafc;border:1px solid #dbeafe;border-radius:12px;padding:10px 11px">
+            <div style="font-size:10.5px;font-weight:800;text-transform:uppercase;color:#0c4a6e;letter-spacing:.4px;margin-bottom:8px">${node.leftTitle}</div>
+            ${renderBlocks(node.leftBlocks)}
+          </div>
+          <div style="background:#f8fafc;border:1px solid #dcfce7;border-radius:12px;padding:10px 11px">
+            <div style="font-size:10.5px;font-weight:800;text-transform:uppercase;color:#166534;letter-spacing:.4px;margin-bottom:8px">${node.rightTitle}</div>
+            ${renderBlocks(node.rightBlocks)}
+          </div>
+        </div>
+        <div class="divider"></div>
+        <button class="btn-tables" onclick="showTablesITU(3)">📋 FR de resistencia</button>
+        <button class="btn-tables" onclick="showTablesITU(4)" style="margin-top:8px">📋 Uso de amikacina</button>
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="ituGoBack()">← Volver</button>
+        <button class="btn-back" onclick="ituRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  else if (node.type === 'itu_treatment_stack') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-top:6px">${node.subtitle}</p>
+      </div>
+      <div class="treatment-body">
+        ${node.blocks.map(r => `
+          <div class="regimen-block" style="background:${r.bg};margin-bottom:8px">
+            <div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>
+            ${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}
+          </div>
+        `).join('')}
+        <div class="divider"></div>
+        <button class="btn-tables" onclick="showTablesITU(3)">📋 FR de resistencia</button>
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="ituGoBack()">← Volver</button>
+        <button class="btn-back" onclick="ituRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('itu-flow-body');
+  body.innerHTML = html;
+  window.scrollTo(0, 0);
+  updateMinimapITU(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   ITU TABLES
+═══════════════════════════════════════════════ */
+function showTablesITU(idx) {
+  document.getElementById('itu-tables-back-btn').onclick = () => showScreen('itu');
+  showScreen('itu-tables');
+  renderITUTablesUI(idx || 0);
+}
+
+function renderITUTablesUI(idx) {
+  itu_activeTabIndex = idx;
+  document.getElementById('itu-tabs-bar').innerHTML = ITU_TABLES.map((t, i) =>
+    `<button class="tab-btn${i===idx?' active':''}" onclick="ituSwipeToTable(${i})">${t.label}</button>`
+  ).join('');
+
+  const cardsHTML = ITU_TABLES.map((t, i) => {
+    if (t.type === 'itu_orenuc') {
+      return `<div class="table-swipe-card" id="itu-swipe-card-${i}">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+          <div class="table-swipe-head">${t.title}</div>
+          <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7;background:#eff6ff">
+            <div style="font-size:11px;font-weight:800;color:#1d4ed8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Definición</div>
+            <div style="font-size:11.5px;color:#1e3a8a;line-height:1.5">${t.summary}</div>
+          </div>
+          <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7;background:#fff7ed">
+            <div style="font-size:11px;font-weight:800;color:#9a3412;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">RENUC</div>
+            ${t.renucRows.map(r => `
+              <div style="padding:8px 0;border-bottom:1px solid #fed7aa">
+                <div style="font-size:11.5px;font-weight:800;color:#1e293b;line-height:1.35;margin-bottom:3px">${r[0]}</div>
+                <div style="font-size:11.5px;color:#7c2d12;line-height:1.45">${r[1]}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>`;
+    }
+
+    if (t.type === 'itu_mdr') {
+      const sectionsHTML = t.sections.map(s => `
+        <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+          <div style="font-size:11px;font-weight:800;color:#991b1b;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+          ${s.items.map(item => `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+        </div>
+      `).join('');
+      return `<div class="table-swipe-card" id="itu-swipe-card-${i}">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+          <div class="table-swipe-head" style="background:linear-gradient(160deg,#ef4444 0%,#dc2626 100%)">${t.title}</div>
+          ${sectionsHTML}
+          <div class="tbl-note">${t.foot}</div>
+        </div>
+      </div>`;
+    }
+
+    const sectionsHTML = t.sections.map(s => {
+      const rawNote = s.table && typeof s.table.note === 'string' ? s.table.note.trim() : '';
+      const noteHTML = rawNote && rawNote !== 'undefined' ? `<div class="tbl-note" style="margin:8px 0 0">${rawNote}</div>` : '';
+      return `
+        <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+          <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+          ${s.table ? `
+            <table class="tbl" style="margin-top:4px">
+              <thead>
+                <tr>
+                  ${s.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${s.table.rows.map(r => `<tr>${r.map((cell, ci) => `<td style="font-size:11.5px;${ci===1 ? 'font-weight:600;color:#334155;' : ''}">${cell}</td>`).join('')}</tr>`).join('')}
+              </tbody>
+            </table>
+            ${noteHTML}
+          ` : s.items.map(item => `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+        </div>
+      `;
+    }).join('');
+
+    return `<div class="table-swipe-card" id="itu-swipe-card-${i}">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+        <div class="table-swipe-head">${t.title}</div>
+        ${sectionsHTML}
+      </div>
+    </div>`;
+  }).join('');
+
+  const dotsHTML = ITU_TABLES.map((_, i) =>
+    `<div class="swipe-dot${i===idx?' active':''}" onclick="ituSwipeToTable(${i})"></div>`
+  ).join('');
+  document.getElementById('itu-tables-panels').innerHTML =
+    `<div class="tables-swipe-container" id="itu-tables-swipe">${cardsHTML}</div><div class="swipe-dot-nav">${dotsHTML}</div>`;
+
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('itu-tables-swipe');
+    if (!scroller) return;
+    scroller.scrollLeft = idx * scroller.clientWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== itu_activeTabIndex) {
+          itu_activeTabIndex = active;
+          document.querySelectorAll('#itu-tabs-bar .tab-btn').forEach((b, j) => b.classList.toggle('active', j === active));
+          document.querySelectorAll('#screen-itu-tables .swipe-dot').forEach((d, j) => d.classList.toggle('active', j === active));
+          ituScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+
+function ituSwipeToTable(i) {
+  itu_activeTabIndex = i;
+  document.querySelectorAll('#itu-tabs-bar .tab-btn').forEach((b, j) => b.classList.toggle('active', j === i));
+  document.querySelectorAll('#screen-itu-tables .swipe-dot').forEach((d, j) => d.classList.toggle('active', j === i));
+  const scroller = document.getElementById('itu-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  ituScrollTabIntoView(i);
+}
+function ituScrollTabIntoView(i) {
+  const bar = document.getElementById('itu-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+
+/* ═════════════════════════════════════════════
    NEUMONÍA ASOCIADA A LA VENTILACIÓN MECÁNICA — NAV
 ═══════════════════════════════════════════════ */
 function navGoBack() {
@@ -4385,6 +4795,10 @@ function startGuide(id) {
     nav_history = []; nav_currentNode = 'nav_start';
     showScreen('nav');
     renderNodeNAV('nav_start');
+  } else if (id === 'itu') {
+    itu_history = []; itu_currentNode = 'itu_start';
+    showScreen('itu');
+    renderNodeITU('itu_start');
   }
 }
 

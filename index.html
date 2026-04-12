@@ -994,6 +994,108 @@
     </div>
   </div>
 
+  <!-- ═══ ITU FLOWCHART ═══ -->
+  <div id="screen-itu" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="header-title">
+          <h1>Infección del Tracto Urinario</h1>
+          <p id="itu-step-sublabel">Sospecha clínica</p>
+        </div>
+        <button class="proa-pill" onclick="showTablesITU(0)">Tablas</button>
+      </div>
+      <div class="minimap-panel" id="itu-minimap-panel">
+        <svg id="itu-minimap-svg" viewBox="0 0 330 138" width="100%" style="display:block;overflow:visible">
+          <defs>
+            <marker id="arr-itu" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+              <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
+            </marker>
+          </defs>
+          <!-- ITU → No Comp/Comp -->
+          <line x1="165" y1="25" x2="165" y2="35" stroke="rgba(255,255,255,.25)" stroke-width="1.5" marker-end="url(#arr-itu)"/>
+          <!-- No Comp/Comp → Amb / Inp -->
+          <line x1="165" y1="55" x2="165" y2="62" stroke="rgba(255,255,255,.22)" stroke-width="1.3"/>
+          <line x1="78"  y1="62" x2="252" y2="62" stroke="rgba(255,255,255,.22)" stroke-width="1.3"/>
+          <line x1="78"  y1="62" x2="78"  y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-itu)"/>
+          <line x1="252" y1="62" x2="252" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.3" marker-end="url(#arr-itu)"/>
+          <!-- Amb → Sin/Con FR MDR -->
+          <line x1="78" y1="88" x2="78"  y2="95" stroke="rgba(255,255,255,.18)" stroke-width="1.2"/>
+          <line x1="39" y1="95" x2="117" y2="95" stroke="rgba(255,255,255,.18)" stroke-width="1.2"/>
+          <line x1="39" y1="95" x2="39"  y2="102" stroke="rgba(255,255,255,.18)" stroke-width="1.2" marker-end="url(#arr-itu)"/>
+          <line x1="117" y1="95" x2="117" y2="102" stroke="rgba(255,255,255,.18)" stroke-width="1.2" marker-end="url(#arr-itu)"/>
+          <!-- Inp → Sin/Con FR MDR -->
+          <line x1="252" y1="88"  x2="252" y2="95"  stroke="rgba(255,255,255,.18)" stroke-width="1.2"/>
+          <line x1="213" y1="95"  x2="291" y2="95"  stroke="rgba(255,255,255,.18)" stroke-width="1.2"/>
+          <line x1="213" y1="95"  x2="213" y2="102" stroke="rgba(255,255,255,.18)" stroke-width="1.2" marker-end="url(#arr-itu)"/>
+          <line x1="291" y1="95"  x2="291" y2="102" stroke="rgba(255,255,255,.18)" stroke-width="1.2" marker-end="url(#arr-itu)"/>
+
+          <rect id="itu-mm-itu_start" x="105" y="5" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ituJumpTo('itu_start')"/>
+          <text id="itu-mmt-itu_start" x="165" y="18" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="8.5" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">ITU</text>
+
+          <rect id="itu-mm-itu_route" x="105" y="35" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ituJumpTo('itu_route')"/>
+          <text id="itu-mmt-itu_route" x="165" y="48" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.2" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">No Comp. / Comp.</text>
+
+          <rect id="itu-mm-itu_amb" x="18" y="68" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ituJumpTo('itu_amb')"/>
+          <text id="itu-mmt-itu_amb" x="78" y="81" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.2" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Ambulatorio</text>
+
+          <rect id="itu-mm-itu_inp" x="192" y="68" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="ituJumpTo('itu_inp')"/>
+          <text id="itu-mmt-itu_inp" x="252" y="81" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.2" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Internado</text>
+
+          <!-- Ramas inferiores: solo visuales, sin navegación -->
+          <rect id="itu-mm-itu_low_simple" x="2"   y="102" width="74" height="18" rx="5" fill="rgba(255,255,255,.12)"/>
+          <text id="itu-mmt-itu_low_simple" x="39"  y="114" text-anchor="middle" fill="rgba(255,255,255,.45)" font-size="6.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin FR MDR</text>
+
+          <rect id="itu-mm-itu_pyelo_nc"   x="80"  y="102" width="74" height="18" rx="5" fill="rgba(255,255,255,.12)"/>
+          <text id="itu-mmt-itu_pyelo_nc"   x="117" y="114" text-anchor="middle" fill="rgba(255,255,255,.45)" font-size="6.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con FR MDR</text>
+
+          <rect id="itu-mm-itu_pyelo_comp" x="176" y="102" width="74" height="18" rx="5" fill="rgba(255,255,255,.12)"/>
+          <text id="itu-mmt-itu_pyelo_comp" x="213" y="114" text-anchor="middle" fill="rgba(255,255,255,.45)" font-size="6.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin FR MDR</text>
+
+          <rect id="itu-mm-itu_sepsis"     x="254" y="102" width="74" height="18" rx="5" fill="rgba(255,255,255,.12)"/>
+          <text id="itu-mmt-itu_sepsis"     x="291" y="114" text-anchor="middle" fill="rgba(255,255,255,.45)" font-size="6.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con FR MDR</text>
+
+          <circle cx="10" cy="132" r="4" fill="#f59e0b"/>
+          <text x="18" y="136" fill="rgba(255,255,255,.4)" font-size="7.5" font-family="system-ui,sans-serif">posición actual</text>
+          <rect x="148" y="127" width="10" height="8" rx="2" fill="rgba(255,255,255,.28)"/>
+          <text x="162" y="136" fill="rgba(255,255,255,.4)" font-size="7.5" font-family="system-ui,sans-serif">visitado</text>
+        </svg>
+      </div>
+      <div style="display:flex;justify-content:center;padding:2px 0 4px">
+        <button id="itu-minimap-arrow-btn" onclick="toggleMinimapITU()"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+                 color:rgba(255,255,255,.7);border-radius:20px;padding:3px 16px;
+                 font-size:13px;cursor:pointer;line-height:1;transition:background .15s;font-family:inherit">▼</button>
+      </div>
+      <div class="flow-progress">
+        <div class="progress-track"><div class="progress-fill" id="itu-progress-fill" style="width:0%"></div></div>
+        <div class="progress-info"><span id="itu-progress-txt"></span><span id="itu-path-txt"></span></div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="screen-scroll">
+      <div class="flow-body" id="itu-flow-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══ ITU TABLES ═══ -->
+  <div id="screen-itu-tables" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" id="itu-tables-back-btn">←</button>
+        <div class="header-title">
+          <h1>Tablas de Referencia</h1>
+          <p>Infección del Tracto Urinario · G-8</p>
+        </div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="tabs-bar" id="itu-tabs-bar"></div>
+    <div class="screen-scroll" style="overflow:hidden;display:flex;flex-direction:column;flex:1">
+      <div id="itu-tables-panels" style="display:flex;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+
   <!-- ═══ OSTEOMIELITIS VINCULADA A FRACTURA ═══ -->
   <div id="screen-osteo_f" class="screen">
     <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
@@ -1355,6 +1457,7 @@
 <script src="flowcharts/osteo_f.js"></script>
 <script src="flowcharts/osteo_v.js"></script>
 <script src="flowcharts/nav.js"></script>
+<script src="flowcharts/itu.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>
