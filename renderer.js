@@ -10,7 +10,7 @@ const GUIDES = [
   { id:'nih',      icon:'🏥', bg:'#e0f2fe', name:'Neumonía Intrahospitalaria',                                                  ok:true  },
   { id:'nav',      icon:'🩻', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:true  },
   { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:true  },
-  { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:false },
+  { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:true  },
   { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:false },
   { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:false },
   { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:false },
@@ -349,6 +349,20 @@ const OV_JUMP_PATHS = {
   ov_noinst_mdr: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_noinst_risk'],
   ov_inst_low: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_inst_risk'],
   ov_inst_mdr: ['ov_start','ov_imaging','ov_diagnosis','ov_tx_intro','ov_inst_risk'],
+};
+
+/* ── MEAS STATE ── */
+let meni_currentNode = 'meni_start';
+let meni_history     = [];
+let meni_activeTabIndex = 0;
+const MENI_TOTAL_STEPS = 5;
+const MENI_MM_IDS = ['meni_start','meni_pl','meni_lcr','meni_ct'];
+const MENI_JUMP_PATHS = {
+  'meni_start': [],
+  'meni_pl':    ['meni_start'],
+  'meni_lcr':   ['meni_start','meni_pl'],
+  'meni_ct':    ['meni_start','meni_pl'],
+  'meni_wait':  ['meni_start','meni_pl','meni_ct'],
 };
 
 /* ── ITU STATE ── */
@@ -3175,6 +3189,377 @@ function ovScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   MENINGOENCEFALITIS AGUDA COMUNITARIA — MEAS
+═══════════════════════════════════════════════ */
+function meniGoBack() {
+  if (meni_history.length > 0) {
+    meni_currentNode = meni_history.pop();
+    renderNodeMENI(meni_currentNode);
+  } else { goHome(); }
+}
+function meniNavigate(nodeId) {
+  meni_history.push(meni_currentNode);
+  meni_currentNode = nodeId;
+  renderNodeMENI(nodeId);
+}
+function meniRestart() {
+  meni_history = [];
+  meni_currentNode = 'meni_start';
+  renderNodeMENI('meni_start');
+}
+function meniTogglePanel(panelId) {
+  const el = document.getElementById(panelId);
+  if (!el) return;
+  const isOpen = el.style.display === 'block';
+  ['meni-lcr-rapid-panel','meni-lcr-chem-panel'].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) node.style.display = 'none';
+  });
+  el.style.display = isOpen ? 'none' : 'block';
+}
+function meniJumpTo(id) {
+  if (id === meni_currentNode) return;
+  if (MENI_JUMP_PATHS[id] !== undefined) {
+    meni_history = [...MENI_JUMP_PATHS[id]];
+    meni_currentNode = id;
+    renderNodeMENI(id);
+  }
+}
+function toggleMinimapMENI() {
+  const panel = document.getElementById('meni-minimap-panel');
+  const btn   = document.getElementById('meni-minimap-arrow-btn');
+  const isOpen = panel.classList.toggle('open');
+  if (btn) btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapMENI(nodeId) {
+  MENI_MM_IDS.forEach(id => {
+    const rect = document.getElementById('meni-mm-' + id);
+    const txt  = document.getElementById('meni-mmt-' + id);
+    if (!rect) return;
+    const isCurrent = id === nodeId;
+    const isVisited = meni_history.includes(id);
+    rect.setAttribute('fill',
+      isCurrent ? '#f59e0b' :
+      isVisited  ? 'rgba(255,255,255,.28)' :
+      'rgba(255,255,255,.1)'
+    );
+    rect.setAttribute('stroke', isCurrent ? '#fbbf24' : 'none');
+    rect.setAttribute('stroke-width', isCurrent ? '2' : '0');
+    if (txt) txt.setAttribute('fill',
+      isCurrent ? '#1e293b' :
+      isVisited  ? 'rgba(255,255,255,.85)' :
+      'rgba(255,255,255,.45)'
+    );
+  });
+  const rapidRect = document.getElementById('meni-mm-rapid');
+  const rapidTxt  = document.getElementById('meni-mmt-rapid');
+  const chemRect  = document.getElementById('meni-mm-chem');
+  const chemTxt   = document.getElementById('meni-mmt-chem');
+  if (rapidRect) {
+    rapidRect.setAttribute('fill', 'rgba(255,255,255,.08)');
+    rapidRect.setAttribute('stroke', 'rgba(255,255,255,.14)');
+    rapidRect.setAttribute('stroke-width', '1');
+  }
+  if (rapidTxt)  rapidTxt.setAttribute('fill', 'rgba(255,255,255,.45)');
+  if (chemRect) {
+    chemRect.setAttribute('fill', 'rgba(255,255,255,.08)');
+    chemRect.setAttribute('stroke', 'rgba(255,255,255,.14)');
+    chemRect.setAttribute('stroke-width', '1');
+  }
+  if (chemTxt)   chemTxt.setAttribute('fill', 'rgba(255,255,255,.45)');
+}
+
+/* ═════════════════════════════════════════════
+   MEAS — RENDER
+═══════════════════════════════════════════════ */
+function renderNodeMENI(nodeId) {
+  const node = NODES_MENI[nodeId];
+  if (!node) return;
+
+  const pct  = Math.round(((node.step - 1) / MENI_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('meni-progress-fill');
+  const ptxt = document.getElementById('meni-progress-txt');
+  const path = document.getElementById('meni-path-txt');
+  const sub  = document.getElementById('meni-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (ptxt) ptxt.textContent = '';
+  if (path) path.textContent = meni_history.length > 0 ? `${meni_history.length} paso${meni_history.length > 1 ? 's' : ''} atrás` : '';
+  const sublabels = {
+    meni_start: 'Sospecha inicial',
+    meni_pl:    'Contraindicación para PL',
+    meni_ct:    'TC de cráneo',
+    meni_lcr:   'Interpretación del LCR',
+    meni_wait:  'Conducta',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || '';
+
+  let html = '';
+
+  if (node.type === 'meni_start') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => i.trim().startsWith('<')
+          ? `<div style="font-size:12.5px;line-height:1.4;color:var(--gray-700);padding:4px 0">${i}</div>`
+          : `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`
+        ).join('')}
+      </div>
+    `).join('');
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#991b1b 0%,#b91c1c 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11px;color:rgba(255,255,255,.82);margin-top:4px;text-transform:uppercase;letter-spacing:.8px">${node.subtitle}</div>
+        </div>
+        ${sectionsHTML}
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:11px 12px;margin-top:10px">
+          <div style="font-size:11px;font-weight:800;color:#9a3412;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Iniciar tratamiento empírico</div>
+          ${node.regimens.map(item => `<div style="font-size:12px;color:#7c2d12;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesMENI(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0">📋 ${b.label}</button>`).join('')}</div>
+        </div>
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="meniNavigate('${node.next}')"><div class="tri"></div><span>Siguiente</span></button>
+      </div>`;
+
+  } else if (node.type === 'meni_question') {
+    html = `
+      <div class="step-card meni-warm-card">
+        <h2>${node.title}</h2>
+        <div class="note-box" style="margin-top:12px;background:#fffdf5;border-left:4px solid #fbbf24">
+          <div class="meni-criteria-grid">
+            ${node.checklist.map(item => `<div style="font-size:12px;color:#334155;line-height:1.4;padding:4px 0">• ${item}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:${opt.color === '#dc2626' ? 'linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%)' : 'linear-gradient(180deg,#f0fdf4 0%,#dcfce7 100%)'}" onclick="meniNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '⚠️' : '🧪'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>`).join('')}
+        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
+      </div>`;
+
+  } else if (node.type === 'meni_route' && nodeId === 'meni_ct') {
+    html = `
+      <div class="step-card">
+        <h2>${node.title}</h2>
+        <div style="display:grid;gap:12px;margin-top:12px">
+          <div style="background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);border:1px solid #fdba74;border-radius:16px;padding:14px;box-shadow:var(--shadow-md)">
+            <div style="font-size:12px;font-weight:900;color:#9a3412;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">TC cráneo con contraindicación de PL</div>
+            <div style="font-size:15px;line-height:1.35;color:#7c2d12;font-weight:700">Mantener tratamiento antimicrobiano + dexametasona y esperar evolución</div>
+          </div>
+          <div style="background:linear-gradient(180deg,#ecfccb 0%,#dcfce7 100%);border:1px solid #86efac;border-radius:16px;padding:14px;box-shadow:var(--shadow-md)">
+            <div style="font-size:12px;font-weight:900;color:#166534;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">TC de cráneo sin contraindicación</div>
+            <div style="font-size:15px;line-height:1.35;color:#166534;font-weight:700;margin-bottom:8px">Continuar el algoritmo con punción lumbar</div>
+            <div style="font-size:14px;line-height:1.35;color:#166534;font-weight:700">Ajustar los tratamientos antimicrobianos según los hallazgos citoquímicos y microbiológicos</div>
+          </div>
+        </div>
+      </div>
+      <div class="choices">
+        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
+      </div>`;
+
+  } else if (node.type === 'meni_route') {
+    html = `
+      <div class="step-card"><h2>${node.title}</h2><p class="sub">${node.subtitle}</p></div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="meniNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '⛔' : '➡️'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${opt.color}">${opt.tag}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>`).join('')}
+        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
+      </div>`;
+
+  } else if (node.type === 'meni_lcr') {
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div style="background:linear-gradient(135deg,#0f766e 0%,#115e59 100%);border-radius:14px;padding:14px 14px 12px;box-shadow:0 10px 24px rgba(15,118,110,.18)">
+          <h2 style="color:white;margin:0">${node.title}</h2>
+          <p style="font-size:12px;line-height:1.45;color:rgba(255,255,255,.88);margin:6px 0 0">${node.subtitle}</p>
+        </div>
+        <div style="margin-top:10px;background:linear-gradient(180deg,#f0fdfa 0%,#ecfeff 100%);border:1px solid #99f6e4;border-radius:14px;padding:12px 13px;box-shadow:var(--shadow-md)">
+          <div style="font-size:11px;font-weight:900;color:#0f766e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Solicite</div>
+          ${node.lumbarItems.map(item => `<div style="font-size:12.5px;color:#134e4a;line-height:1.5;margin-bottom:5px;font-weight:600">• ${item}</div>`).join('')}
+        </div>
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesMENI(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0">📋 ${b.label}</button>`).join('')}</div>
+      </div>
+      <div class="choices">
+        <button class="origin-choice" style="border-color:#ea580c;background:white" onclick="meniTogglePanel('meni-lcr-rapid-panel')">
+          <div class="origin-choice-icon" style="background:#ea580c">1</div>
+          <div class="origin-choice-body">
+            <div class="origin-choice-label" style="color:#ea580c">Tratamiento guiado por resultados microbiológicos rápidos del LCR</div>
+          </div>
+          <div class="origin-choice-arrow" style="color:#ea580c">›</div>
+        </button>
+        <div id="meni-lcr-rapid-panel" style="display:none;margin-top:4px">
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#fff;overflow:hidden">
+            <div style="background:#f6c8a7;padding:16px 10px;text-align:center;min-height:150px;display:flex;align-items:center;justify-content:center">
+              <div style="font-size:12px;line-height:1.35;color:#111827">Directo con bacterias: guiar tratamiento ATB según tinción de gram</div>
+            </div>
+            <div style="background:#f6c8a7;padding:16px 10px;text-align:center;min-height:150px;display:flex;align-items:center;justify-content:center">
+              <div style="font-size:12px;line-height:1.35;color:#111827">Ag pneumo. positivo: tratamiento para <em>S. pneumoniae</em></div>
+            </div>
+            <div style="background:#f6c8a7;padding:16px 10px;text-align:center;min-height:150px;display:flex;align-items:center;justify-content:center">
+              <div style="font-size:12px;line-height:1.35;color:#111827">Panel PCR positivo VHS o VVZ: tratamiento antiviral dirigido</div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center;margin:10px 0;color:#93c5fd;font-size:28px;line-height:1">▼</div>
+          <div style="background:#c7d8f5;padding:18px 14px;text-align:center">
+            <div style="font-size:12px;line-height:1.4;color:#111827">Directo sin bacterias, Ag pneumococcico negativo y panel de VHS y VVZ negativo, solicite panel multiparamétrico-ME y Ag <em>Cryptococcus</em> de muestra testigo</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn-tables" onclick="showTablesMENI(2)" style="width:auto;min-width:auto">📋 Tratamiento específico</button>
+            <button class="btn-tables" onclick="showTablesMENI(1)" style="width:auto;min-width:auto">📋 Tabla LCR</button>
+          </div>
+        </div>
+        <button class="origin-choice" style="border-color:#64748b;background:white" onclick="meniTogglePanel('meni-lcr-chem-panel')">
+          <div class="origin-choice-icon" style="background:#64748b">2</div>
+          <div class="origin-choice-body">
+            <div class="origin-choice-label" style="color:#475569">Tratamiento guiado por características citoquímicas del LCR</div>
+          </div>
+          <div class="origin-choice-arrow" style="color:#475569">›</div>
+        </button>
+        <div id="meni-lcr-chem-panel" style="display:none;margin-top:4px">
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#fff;overflow:hidden;align-items:stretch">
+            <div style="display:flex;flex-direction:column">
+              <div style="background:#bcb8b8;padding:16px 10px;text-align:center;min-height:182px;display:flex;align-items:center;justify-content:center">
+                <div style="font-size:12px;line-height:1.4;color:#111827">Proteínas: 1-5 g/L<br>Leucocitos &gt; 500<br>Predominio PMN (80%)<br>Glucosa &lt; 0.4 g/L<br>Lactato &gt;30 mg/dL<br>Posible etiología<br><strong>BACTERIANA</strong></div>
+              </div>
+              <div style="display:flex;justify-content:center;margin:10px 0;color:#93c5fd;font-size:28px;line-height:1">▼</div>
+              <div style="width:100%;min-height:108px;background:#bcb8b8;padding:16px 10px;text-align:center;display:flex;align-items:center;justify-content:center">
+                <div style="font-size:12px;line-height:1.4;color:#111827">Ceftriaxona 2 gr iv c/12hs +<br>Dexametasona 0.15 mg/kg<br>iv c/6hs</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column">
+              <div style="background:#c7d8f5;padding:16px 10px;text-align:center;min-height:182px;display:flex;align-items:center;justify-content:center">
+                <div style="font-size:12px;line-height:1.4;color:#111827">Proteínas &lt; 2 g/L<br>Leucocitos 10-1000<br>Predominio linfocitos<br>Glucosa &gt; 0.45 g/L<br>Lactato &lt; 30 mg/dL<br>Posible etiología<br><strong>VIRAL</strong></div>
+              </div>
+              <div style="display:flex;justify-content:center;margin:10px 0;color:#93c5fd;font-size:28px;line-height:1">▼</div>
+              <div style="width:100%;min-height:108px;background:#c7d8f5;padding:16px 10px;text-align:center;display:flex;align-items:center;justify-content:center">
+                <div style="font-size:12px;line-height:1.4;color:#111827">Aciclovir 10 mg/kg c/8hs +<br>Ceftriaxona 2 gr iv c/12hs +<br>Dexametasona 0.15 mg/kg iv<br>c/6hs</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:12px;background:#dbeafe;border:1px solid #93c5fd;border-radius:14px;padding:14px 12px;text-align:center;box-shadow:var(--shadow-md)">
+            <div style="font-size:13px;line-height:1.4;color:#1e3a8a;font-weight:700">Ante resultados negativos y LCR de posible etiología viral derivar muestra al DLSP para evaluar otras etiologías</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn-tables" onclick="showTablesMENI(1)" style="width:auto;min-width:auto">📋 Citoquímico LCR</button>
+            <button class="btn-tables" onclick="showTablesMENI(2)" style="width:auto;min-width:auto">📋 Tratamiento específico</button>
+          </div>
+        </div>
+        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
+      </div>`;
+
+  } else if (node.type === 'meni_treatment') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-top:6px">${node.subtitle}</p>
+      </div>
+      <div class="treatment-body">
+        ${node.regimens.map(r => `<div class="regimen-block" style="background:${r.bg}"><div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}</div>`).join('')}
+        ${node.notes ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:11px 12px;margin-top:10px">${node.notes.map(item => `<div style="font-size:12px;color:#334155;line-height:1.45;margin-bottom:5px"><span>• ${typeof item === 'string' ? item : item.text}</span>${typeof item === 'object' && typeof item.tableIndex === 'number' ? `<button class="btn-tables" onclick="showTablesMENI(${item.tableIndex})" style="display:inline-flex;width:auto;min-width:auto;padding:5px 8px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-left:6px;vertical-align:middle">📋 ${item.tableLabel}</button>` : ''}</div>`).join('')}</div>` : ''}
+        <div class="divider"></div>
+        <button class="btn-tables" onclick="showTablesMENI(2)">📋 Tratamiento específico</button>
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
+        <button class="btn-back" onclick="meniRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('meni-flow-body');
+  body.innerHTML = html;
+  window.scrollTo(0, 0);
+  updateMinimapMENI(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   MEAS TABLES
+═══════════════════════════════════════════════ */
+function showTablesMENI(idx) {
+  document.getElementById('meni-tables-back-btn').onclick = () => showScreen('meni');
+  showScreen('meni-tables');
+  renderMENITablesUI(idx || 0);
+}
+function renderMENITablesUI(idx) {
+  meni_activeTabIndex = idx;
+  document.getElementById('meni-tabs-bar').innerHTML = MENI_TABLES.map((t, i) =>
+    `<button class="tab-btn${i===idx?' active':''}" onclick="meniSwipeToTable(${i})">${t.label}</button>`
+  ).join('');
+  const cardsHTML = MENI_TABLES.map((t, i) => {
+    const sectionsHTML = t.sections.map(s => `
+      <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+        <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+        ${s.table ? `
+          <table class="tbl" style="margin-top:4px">
+            <thead><tr>${s.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}</tr></thead>
+            <tbody>${s.table.rows.map(r => `<tr>${r.map(cell => `<td style="font-size:11.5px;color:#334155">${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+          ${s.table.note ? `<div class="tbl-note" style="margin:8px 0 0">${s.table.note}</div>` : ''}
+        ` : s.items.map(item => `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
+      </div>`).join('');
+    return `<div class="table-swipe-card" id="meni-swipe-card-${i}">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+        <div class="table-swipe-head">${t.title}</div>
+        ${sectionsHTML}
+      </div>
+    </div>`;
+  }).join('');
+  const dotsHTML = MENI_TABLES.map((_, i) =>
+    `<div class="swipe-dot${i===idx?' active':''}" onclick="meniSwipeToTable(${i})"></div>`
+  ).join('');
+  document.getElementById('meni-tables-panels').innerHTML =
+    `<div class="tables-swipe-container" id="meni-tables-swipe">${cardsHTML}</div><div class="swipe-dot-nav">${dotsHTML}</div>`;
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('meni-tables-swipe');
+    if (!scroller) return;
+    scroller.scrollLeft = idx * scroller.clientWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== meni_activeTabIndex) {
+          meni_activeTabIndex = active;
+          document.querySelectorAll('#meni-tabs-bar .tab-btn').forEach((b, j) => b.classList.toggle('active', j === active));
+          document.querySelectorAll('#screen-meni-tables .swipe-dot').forEach((d, j) => d.classList.toggle('active', j === active));
+          meniScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+function meniSwipeToTable(i) {
+  meni_activeTabIndex = i;
+  document.querySelectorAll('#meni-tabs-bar .tab-btn').forEach((b, j) => b.classList.toggle('active', j === i));
+  document.querySelectorAll('#screen-meni-tables .swipe-dot').forEach((d, j) => d.classList.toggle('active', j === i));
+  const scroller = document.getElementById('meni-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  meniScrollTabIntoView(i);
+}
+function meniScrollTabIntoView(i) {
+  const bar = document.getElementById('meni-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+
+/* ═════════════════════════════════════════════
    INFECCIÓN DEL TRACTO URINARIO — ITU
 ═══════════════════════════════════════════════ */
 function ituGoBack() {
@@ -4799,6 +5184,10 @@ function startGuide(id) {
     itu_history = []; itu_currentNode = 'itu_start';
     showScreen('itu');
     renderNodeITU('itu_start');
+  } else if (id === 'meni') {
+    meni_history = []; meni_currentNode = 'meni_start';
+    showScreen('meni');
+    renderNodeMENI('meni_start');
   }
 }
 
