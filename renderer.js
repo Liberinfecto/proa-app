@@ -12,7 +12,7 @@ const GUIDES = [
   { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:true  },
   { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:true  },
   { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:true  },
-  { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:false },
+  { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:true  },
   { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:false },
   { id:'artritis', icon:'🦴', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:true  },
   { id:'osteo_f',  icon:'🦴', bg:'#e0f2fe', name:'Osteomielitis de Hueso Largo Vinculada a Fractura',                          ok:true  },
@@ -390,6 +390,26 @@ const ITU_JUMP_PATHS = {
   'itu_prost_comp':    ['itu_start','itu_route','itu_inp'],
   'itu_cat_sys':       ['itu_start','itu_route','itu_inp'],
   'itu_sepsis':        ['itu_start','itu_route','itu_inp'],
+};
+
+/* ── DCEI STATE ── */
+let dcei_currentNode = 'dcei_start';
+let dcei_history = [];
+let dcei_activeTabIndex = 0;
+const DCEI_TOTAL_STEPS = 5;
+const DCEI_MM_IDS = ['dcei_start','dcei_bacteremia_route','dcei_local_route','dcei_bact_low','dcei_bact_workup','dcei_superficial','dcei_systemic_workup'];
+const DCEI_JUMP_PATHS = {
+  'dcei_start': [],
+  'dcei_local_route': ['dcei_start'],
+  'dcei_bacteremia_route': ['dcei_start'],
+  'dcei_superficial': ['dcei_start','dcei_local_route'],
+  'dcei_superficial_done': ['dcei_start','dcei_local_route','dcei_superficial'],
+  'dcei_systemic_workup': ['dcei_start','dcei_local_route'],
+  'dcei_pocket': ['dcei_start','dcei_local_route','dcei_systemic_workup'],
+  'dcei_systemic': ['dcei_start','dcei_local_route','dcei_systemic_workup'],
+  'dcei_bact_low': ['dcei_start','dcei_bacteremia_route'],
+  'dcei_bact_very_low': ['dcei_start','dcei_bacteremia_route','dcei_bact_low'],
+  'dcei_bact_workup': ['dcei_start','dcei_bacteremia_route'],
 };
 
 /* ── ENDO STATE ── */
@@ -3592,6 +3612,290 @@ function meniScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   DCEI — NAV / MINIMAP / RENDER
+═══════════════════════════════════════════════ */
+function dceiGoBack() {
+  if (dcei_history.length > 0) {
+    dcei_currentNode = dcei_history.pop();
+    renderNodeDCEI(dcei_currentNode);
+  } else {
+    goHome();
+  }
+}
+function dceiNavigate(nodeId) {
+  dcei_history.push(dcei_currentNode);
+  dcei_currentNode = nodeId;
+  renderNodeDCEI(nodeId);
+}
+function dceiRestart() {
+  dcei_history = [];
+  dcei_currentNode = 'dcei_start';
+  renderNodeDCEI('dcei_start');
+}
+function dceiJumpTo(id) {
+  if (id === dcei_currentNode) return;
+  if (DCEI_JUMP_PATHS[id] !== undefined) {
+    dcei_history = [...DCEI_JUMP_PATHS[id]];
+    dcei_currentNode = id;
+    renderNodeDCEI(id);
+  }
+}
+function toggleMinimapDCEI() {
+  const panel = document.getElementById('dcei-minimap-panel');
+  const btn = document.getElementById('dcei-minimap-arrow-btn');
+  if (!panel || !btn) return;
+  const isOpen = panel.classList.toggle('open');
+  btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapDCEI(nodeId) {
+  DCEI_MM_IDS.forEach(id => {
+    const rect = document.getElementById('dcei-mm-' + id);
+    const txt = document.getElementById('dcei-mmt-' + id);
+    if (!rect || !txt) return;
+    const isCurrent = id === nodeId;
+    const isVisited = dcei_history.includes(id);
+    rect.setAttribute('fill', isCurrent ? '#f59e0b' : isVisited ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.12)');
+    txt.setAttribute('fill', isCurrent ? '#111827' : isVisited ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.55)');
+    txt.setAttribute('font-weight', isCurrent ? '800' : '600');
+  });
+}
+function renderNodeDCEI(nodeId) {
+  const node = NODES_DCEI[nodeId];
+  if (!node) return;
+
+  const pct = Math.round(((node.step - 1) / DCEI_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('dcei-progress-fill');
+  const ptxt = document.getElementById('dcei-progress-txt');
+  const path = document.getElementById('dcei-path-txt');
+  const sub = document.getElementById('dcei-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (ptxt) ptxt.textContent = '';
+  if (path) path.textContent = dcei_history.length > 0 ? `${dcei_history.length} paso${dcei_history.length > 1 ? 's' : ''} atrás` : '';
+  const sublabels = {
+    dcei_start: 'Evaluación inicial',
+    dcei_local_route: 'Sospecha de infección del DCEI',
+    dcei_superficial: 'Manejo conservador',
+    dcei_superficial_done: 'Evolución favorable',
+    dcei_systemic_workup: 'Estudio y retiro del dispositivo',
+    dcei_pocket: 'Infección del bolsillo',
+    dcei_systemic: 'Infección sistémica',
+    dcei_bacteremia_route: 'Bacteriemia y DCEI',
+    dcei_bact_low: 'Baja probabilidad',
+    dcei_bact_very_low: 'Muy baja probabilidad',
+    dcei_bact_workup: 'Mayor probabilidad',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || 'Tratamiento';
+
+  let html = '';
+
+  if (node.type === 'dcei_start') {
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0d3a52 0%,#135f8f 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11.2px;color:rgba(255,255,255,.88);margin-top:4px;line-height:1.45">${node.subtitle}</div>
+        </div>
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:12px">
+          ${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesDCEI(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 10px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="dceiNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#1d4ed8' ? '🩸' : '⚡'}</div>
+            <div class="origin-choice-body" style="${!opt.desc ? 'display:flex;align-items:center;min-height:44px;' : ''}">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              ${opt.desc ? `<div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>` : ''}
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>`).join('')}
+      </div>`;
+  } else if (node.type === 'dcei_question') {
+    html = `
+      <div class="step-card">
+        <div style="background:linear-gradient(135deg,#0d3a52 0%,#135f8f 100%);border-radius:14px;padding:16px 14px 14px;box-shadow:0 10px 24px rgba(13,58,82,.18)">
+          <h2 style="color:white;margin:0;text-align:center">${node.title}</h2>
+          ${node.subtitle ? `<div style="font-size:11.3px;color:rgba(255,255,255,.86);margin-top:6px;line-height:1.45;text-align:center">${node.subtitle}</div>` : ''}
+        </div>
+        ${node.noteHtml ? `<div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px">${node.noteHtml}</div>` : ''}
+        ${node.branchFlow ? `
+          <div style="display:grid;gap:8px;margin-top:12px">
+            ${node.branchFlow.top.map((item, idx) => `${idx ? `<div style="display:flex;justify-content:center;align-items:center;color:#16a34a;font-size:18px;font-weight:900;line-height:1">↓</div>` : ''}<div style="background:${idx === 0 ? 'linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%)' : 'white'};border:1.5px solid #84cc16;border-radius:14px;padding:12px 12px;text-align:center;box-shadow:0 8px 20px rgba(132,204,22,.10)"><div style="font-size:12.3px;line-height:1.45;color:#3f6212;font-weight:${idx === 0 ? '800' : '700'}">${item}</div></div>`).join('')}
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-top:2px">
+              <div style="flex:1;display:grid;gap:8px">
+                <div style="display:flex;justify-content:center;align-items:center;color:#16a34a;font-size:18px;font-weight:900;line-height:1">↓</div>
+                <div style="background:white;border:1.5px solid #84cc16;border-radius:14px;padding:12px 10px;text-align:center;box-shadow:0 8px 20px rgba(132,204,22,.10);min-height:62px;display:flex;align-items:center;justify-content:center"><div style="font-size:12px;line-height:1.4;color:#3f6212;font-weight:700">${node.branchFlow.left}</div></div>
+                <div style="display:flex;justify-content:center;align-items:center;color:#16a34a;font-size:18px;font-weight:900;line-height:1">↓</div>
+              </div>
+              <div style="flex:1;display:grid;gap:8px">
+                <div style="display:flex;justify-content:center;align-items:center;color:#d97706;font-size:18px;font-weight:900;line-height:1">↓</div>
+                <button style="background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);border:1.5px solid #f59e0b;border-radius:14px;padding:12px 34px 12px 10px;text-align:center;box-shadow:0 8px 20px rgba(245,158,11,.10);min-height:62px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;position:relative" onclick="dceiNavigate('${node.branchFlow.right.next}')">
+                  <div style="font-size:12px;line-height:1.4;color:#b45309;font-weight:700">${node.branchFlow.right.title}</div>
+                  <div style="position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:16px;line-height:1;color:#d97706;font-weight:900">›</div>
+                </button>
+              </div>
+            </div>
+            <div style="background:linear-gradient(180deg,#ecfccb 0%,#dcfce7 100%);border:1.5px solid #84cc16;border-radius:14px;padding:12px 12px;text-align:center;box-shadow:0 8px 20px rgba(132,204,22,.10)"><div style="font-size:12.3px;line-height:1.45;color:#3f6212;font-weight:800">${node.branchFlow.bottom}</div></div>
+          </div>` : ''}
+        ${node.actionButtons ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesDCEI(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}</div>` : ''}
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => {
+          const bg = opt.color === '#dc2626'
+            ? 'linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%)'
+            : opt.color === '#65a30d'
+              ? 'linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%)'
+              : 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)';
+          const icon = opt.color === '#dc2626'
+            ? '🚨'
+            : opt.color === '#65a30d'
+              ? '✅'
+              : opt.color === '#1d4ed8'
+                ? '🩸'
+                : '⚡';
+          return `
+            <button class="origin-choice" style="border-color:${opt.color};background:${bg}" onclick="dceiNavigate('${opt.next}')">
+              <div class="origin-choice-icon" style="background:${opt.color}">${icon}</div>
+              <div class="origin-choice-body">
+                <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+                <div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>
+              </div>
+              <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+            </button>`;
+        }).join('')}
+        <button class="btn-back" onclick="dceiGoBack()">← Volver</button>
+      </div>`;
+  } else if (node.type === 'dcei_info') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        ${node.subtitle ? `<p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.85;margin-top:6px">${node.subtitle}</p>` : ''}
+      </div>
+      <div class="treatment-body">
+        ${node.summary ? `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;margin-bottom:10px;font-size:12.5px;color:#334155;line-height:1.45"><strong>Resumen:</strong> ${node.summary}</div>` : ''}
+        ${(node.blocks || []).map(block => {
+          const tone = block.tone === 'green'
+            ? { bg:'#ecfccb', color:'#3f6212' }
+            : { bg:'#ffedd5', color:'#9a3412' };
+          return `<div class="regimen-block" style="background:${tone.bg}">
+            <div class="regimen-label" style="color:${tone.color}">${block.title}</div>
+            ${block.lines.map(line => `<div class="drug-line" style="color:${tone.color}">${line}</div>`).join('')}
+          </div>`;
+        }).join('')}
+        ${node.nextButton ? `<div style="display:flex;justify-content:center;margin-top:10px"><button class="triangle-nav-btn" onclick="dceiNavigate('${node.nextButton.next}')"><div class="tri"></div><span>${node.nextButton.label}</span></button></div>` : ''}
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="dceiGoBack()">← Volver</button>
+        <button class="btn-back" onclick="dceiRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  } else if (node.type === 'dcei_treatment') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        ${node.subtitle ? `<p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.85;margin-top:6px">${node.subtitle}</p>` : ''}
+      </div>
+      <div class="treatment-body">
+        ${node.summary ? `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;margin-bottom:10px;font-size:12.5px;color:#334155;line-height:1.45"><strong>Resumen:</strong> ${node.summary}</div>` : ''}
+        ${node.criteria ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:11px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:900;color:#9a3412;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Cualquiera de los siguientes</div>${node.criteria.map(item => `<div style="font-size:12px;color:#7c2d12;line-height:1.45;margin-bottom:5px">• ${item}</div>`).join('')}</div>` : ''}
+        ${node.regimens.map(r => `<div class="regimen-block" style="background:${r.bg}"><div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}</div>`).join('')}
+        ${node.plainNote ? `<div style="margin-top:10px;background:linear-gradient(180deg,#fef3c7 0%,#fde68a 100%);border:1px solid #f59e0b;border-radius:14px;padding:12px 12px;text-align:center;box-shadow:0 8px 20px rgba(245,158,11,.12)"><div style="font-size:11px;font-weight:900;color:#92400e;text-transform:uppercase;letter-spacing:.45px;margin-bottom:4px">Duración</div><div style="font-size:13px;line-height:1.4;color:#78350f;font-weight:800">${node.plainNote}</div></div>` : ''}
+        ${node.careNote ? `<div style="margin-top:12px;background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);border:1px solid #fda4af;border-radius:14px;padding:13px 12px;text-align:center;box-shadow:var(--shadow-md)"><div style="font-size:11px;font-weight:900;color:#9f1239;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Conducta clave</div><div style="font-size:13px;line-height:1.45;color:#881337;font-weight:700">${node.careNote}</div></div>` : ''}
+        ${node.actions ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actions.map(b => `<button class="btn-tables" onclick="showTablesDCEI(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}</div>` : ''}
+      </div>
+      <div class="choices" style="margin-top:10px">
+        ${node.options ? node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="dceiNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '🚨' : opt.color === '#65a30d' ? '✅' : '⚡'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>`).join('') : ''}
+        <button class="btn-back" onclick="dceiGoBack()">← Volver</button>
+        <button class="btn-back" onclick="dceiRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('dcei-flow-body');
+  if (body) body.innerHTML = html;
+  window.scrollTo(0,0);
+  updateMinimapDCEI(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   DCEI TABLES
+═══════════════════════════════════════════════ */
+function showTablesDCEI(idx) {
+  document.getElementById('dcei-tables-back-btn').onclick = () => showScreen('dcei');
+  showScreen('dcei-tables');
+  renderDCEITablesUI(idx || 0);
+}
+function renderDCEITablesUI(idx) {
+  dcei_activeTabIndex = idx;
+  document.getElementById('dcei-tabs-bar').innerHTML = DCEI_TABLES.map((t, i) => `<button class="tab-btn${i===idx?' active':''}" onclick="dceiSwipeToTable(${i})">${t.label}</button>`).join('');
+  const cardsHTML = DCEI_TABLES.map((t, i) => {
+    const sectionsHTML = t.sections.map(s => `
+      <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+        <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+        ${s.table ? `
+          <table class="tbl" style="margin-top:4px">
+            <thead><tr>${s.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}</tr></thead>
+            <tbody>${s.table.rows.map(r => `<tr>${r.map(cell => `<td style="font-size:11.3px;color:#334155;white-space:pre-wrap;line-height:1.4">${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        ` : s.items.map(item => {
+          const raw = typeof item === 'string' && item.trim().startsWith('<');
+          return raw
+            ? `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:5px">${item}</div>`
+            : `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:5px">• ${item}</div>`;
+        }).join('')}
+      </div>`).join('');
+    return `<div class="table-swipe-card" id="dcei-swipe-card-${i}">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+        <div class="table-swipe-head">${t.title}</div>
+        ${sectionsHTML}
+      </div>
+    </div>`;
+  }).join('');
+  const dotsHTML = DCEI_TABLES.map((_,i) => `<div class="swipe-dot${i===idx?' active':''}" onclick="dceiSwipeToTable(${i})"></div>`).join('');
+  document.getElementById('dcei-tables-panels').innerHTML = `<div class="tables-swipe-container" id="dcei-tables-swipe">${cardsHTML}</div><div class="swipe-dot-nav">${dotsHTML}</div>`;
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('dcei-tables-swipe');
+    if (!scroller) return;
+    scroller.scrollLeft = idx * scroller.clientWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== dcei_activeTabIndex) {
+          dcei_activeTabIndex = active;
+          document.querySelectorAll('#dcei-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===active));
+          document.querySelectorAll('#screen-dcei-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===active));
+          dceiScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+function dceiSwipeToTable(i) {
+  dcei_activeTabIndex = i;
+  document.querySelectorAll('#dcei-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===i));
+  document.querySelectorAll('#screen-dcei-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===i));
+  const scroller = document.getElementById('dcei-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  dceiScrollTabIntoView(i);
+}
+function dceiScrollTabIntoView(i) {
+  const bar = document.getElementById('dcei-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+/* ═════════════════════════════════════════════
    ENDOCARDITIS — NAV / MINIMAP / RENDER
 ═══════════════════════════════════════════════ */
 function endoGoBack() {
@@ -5512,6 +5816,10 @@ function startGuide(id) {
     endo_caseContext = null;
     showScreen('endo');
     renderNodeENDO('endo_start');
+  } else if (id === 'dcei') {
+    dcei_history = []; dcei_currentNode = 'dcei_start';
+    showScreen('dcei');
+    renderNodeDCEI('dcei_start');
   }
 }
 

@@ -1180,6 +1180,98 @@
     </div>
   </div>
 
+  <!-- ═══ DCEI FLOWCHART ═══ -->
+  <div id="screen-dcei" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="header-title">
+          <h1>DCEI y Sospecha de Proceso Infeccioso</h1>
+          <p id="dcei-step-sublabel">Evaluación inicial</p>
+        </div>
+        <button class="proa-pill" onclick="showTablesDCEI(0)">Tablas</button>
+      </div>
+      <div class="minimap-panel" id="dcei-minimap-panel">
+        <svg id="dcei-minimap-svg" viewBox="0 0 340 148" width="100%" style="display:block;overflow:visible">
+          <defs>
+            <marker id="arr-dcei" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+              <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
+            </marker>
+          </defs>
+          <line x1="170" y1="28" x2="170" y2="48" stroke="rgba(255,255,255,.24)" stroke-width="1.4"/>
+          <line x1="170" y1="48" x2="170" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="170" y1="68" x2="91" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="170" y1="68" x2="249" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="91" y1="68" x2="91" y2="78" stroke="rgba(255,255,255,.22)" stroke-width="1.2" marker-end="url(#arr-dcei)"/>
+          <line x1="249" y1="68" x2="249" y2="78" stroke="rgba(255,255,255,.22)" stroke-width="1.2" marker-end="url(#arr-dcei)"/>
+          <line x1="91" y1="98" x2="91" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="91" y1="108" x2="42" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="91" y1="108" x2="124" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="42" y1="108" x2="42" y2="118" stroke="rgba(255,255,255,.18)" stroke-width="1.1" marker-end="url(#arr-dcei)"/>
+          <line x1="124" y1="108" x2="124" y2="118" stroke="rgba(255,255,255,.18)" stroke-width="1.1" marker-end="url(#arr-dcei)"/>
+          <line x1="249" y1="98" x2="249" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="249" y1="108" x2="214" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="249" y1="108" x2="297" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="214" y1="108" x2="214" y2="118" stroke="rgba(255,255,255,.18)" stroke-width="1.1" marker-end="url(#arr-dcei)"/>
+          <line x1="297" y1="108" x2="297" y2="118" stroke="rgba(255,255,255,.18)" stroke-width="1.1" marker-end="url(#arr-dcei)"/>
+
+          <rect id="dcei-mm-dcei_start" x="51" y="8" width="238" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="dceiJumpTo('dcei_start')"/>
+          <text id="dcei-mmt-dcei_start" x="170" y="21" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.7" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">Paciente con DCEI</text>
+
+          <rect id="dcei-mm-dcei_bacteremia_route" x="16" y="78" width="150" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="dceiJumpTo('dcei_bacteremia_route')"/>
+          <text id="dcei-mmt-dcei_bacteremia_route" x="91" y="91" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Bacteriemia</text>
+
+          <rect id="dcei-mm-dcei_local_route" x="174" y="78" width="150" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="dceiJumpTo('dcei_local_route')"/>
+          <text id="dcei-mmt-dcei_local_route" x="249" y="91" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sospecha de infección DCEI</text>
+
+          <rect id="dcei-mm-dcei_bact_low" x="4" y="118" width="76" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="dceiJumpTo('dcei_bacteremia_route')"/>
+          <text id="dcei-mmt-dcei_bact_low" x="42" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Baja probab.</text>
+
+          <rect id="dcei-mm-dcei_bact_workup" x="86" y="118" width="76" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="dceiJumpTo('dcei_bact_workup')"/>
+          <text id="dcei-mmt-dcei_bact_workup" x="124" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Mayor probab.</text>
+
+          <rect id="dcei-mm-dcei_superficial" x="176" y="118" width="76" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="dceiJumpTo('dcei_superficial')"/>
+          <text id="dcei-mmt-dcei_superficial" x="214" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Locorreg.</text>
+
+          <rect id="dcei-mm-dcei_systemic_workup" x="258" y="118" width="78" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="dceiJumpTo('dcei_systemic_workup')"/>
+          <text id="dcei-mmt-dcei_systemic_workup" x="297" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Bolsillo / sist.</text>
+        </svg>
+      </div>
+      <div style="display:flex;justify-content:center;padding:2px 0 4px">
+        <button id="dcei-minimap-arrow-btn" onclick="toggleMinimapDCEI()"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+                 color:rgba(255,255,255,.7);border-radius:20px;padding:3px 16px;
+                 font-size:13px;cursor:pointer;line-height:1;transition:background .15s;font-family:inherit">▼</button>
+      </div>
+      <div class="flow-progress">
+        <div class="progress-track"><div class="progress-fill" id="dcei-progress-fill" style="width:0%"></div></div>
+        <div class="progress-info"><span id="dcei-progress-txt"></span><span id="dcei-path-txt"></span></div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="screen-scroll">
+      <div class="flow-body" id="dcei-flow-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══ DCEI TABLES ═══ -->
+  <div id="screen-dcei-tables" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" id="dcei-tables-back-btn">←</button>
+        <div class="header-title">
+          <h1>Tablas de Referencia</h1>
+          <p>Paciente con DCEI y Sospecha de Proceso Infeccioso · G-11</p>
+        </div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="tabs-bar" id="dcei-tabs-bar"></div>
+    <div class="screen-scroll" style="overflow:hidden;display:flex;flex-direction:column;flex:1">
+      <div id="dcei-tables-panels" style="display:flex;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+
   <!-- ═══ ITU FLOWCHART ═══ -->
   <div id="screen-itu" class="screen">
     <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
@@ -1646,6 +1738,7 @@
 <script src="flowcharts/itu.js"></script>
 <script src="flowcharts/meas.js"></script>
 <script src="flowcharts/endo.js"></script>
+<script src="flowcharts/dcei.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>
