@@ -1085,6 +1085,101 @@
     </div>
   </div>
 
+  <!-- ═══ ENDOCARDITIS INFECCIOSA FLOWCHART ═══ -->
+  <div id="screen-endo" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="header-title">
+          <h1>Sospecha Clínica de Endocarditis Infecciosa</h1>
+          <p id="endo-step-sublabel">Evaluación inicial</p>
+        </div>
+        <button class="proa-pill" onclick="showTablesENDO(0)">Tablas</button>
+      </div>
+      <div class="minimap-panel" id="endo-minimap-panel">
+        <svg id="endo-minimap-svg" viewBox="0 0 330 162" width="100%" style="display:block;overflow:visible">
+          <defs>
+            <marker id="arr-endo" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+              <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
+            </marker>
+          </defs>
+
+          <line x1="165" y1="24" x2="165" y2="36" stroke="rgba(255,255,255,.25)" stroke-width="1.4" marker-end="url(#arr-endo)"/>
+          <line x1="165" y1="56" x2="165" y2="66" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="165" y1="66" x2="105" y2="66" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="165" y1="66" x2="225" y2="66" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="105" y1="66" x2="105" y2="78" stroke="rgba(255,255,255,.22)" stroke-width="1.2" marker-end="url(#arr-endo)"/>
+          <line x1="225" y1="66" x2="225" y2="78" stroke="rgba(255,255,255,.22)" stroke-width="1.2" marker-end="url(#arr-endo)"/>
+          <line x1="105" y1="98" x2="105" y2="106" stroke="rgba(255,255,255,.18)" stroke-width="1.15"/>
+          <line x1="58" y1="106" x2="165" y2="106" stroke="rgba(255,255,255,.18)" stroke-width="1.15"/>
+          <line x1="58" y1="106" x2="58" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1.15" marker-end="url(#arr-endo)"/>
+          <line x1="165" y1="106" x2="165" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1.15" marker-end="url(#arr-endo)"/>
+          <line x1="225" y1="98" x2="225" y2="106" stroke="rgba(255,255,255,.18)" stroke-width="1.15"/>
+          <line x1="225" y1="106" x2="244" y2="106" stroke="rgba(255,255,255,.18)" stroke-width="1.15"/>
+          <line x1="244" y1="106" x2="244" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1.15" marker-end="url(#arr-endo)"/>
+          <line x1="225" y1="106" x2="286" y2="106" stroke="rgba(255,255,255,.18)" stroke-width="1.15"/>
+          <line x1="286" y1="106" x2="286" y2="116" stroke="rgba(255,255,255,.18)" stroke-width="1.15" marker-end="url(#arr-endo)"/>
+
+          <rect id="endo-mm-endo_start" x="90" y="4" width="150" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="endoJumpTo('endo_start')"/>
+          <text id="endo-mmt-endo_start" x="165" y="17" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="8" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">Sospecha clínica</text>
+
+          <rect id="endo-mm-endo_hc_ett" x="100" y="36" width="130" height="20" rx="5" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.14)" stroke-width="1" style="cursor:pointer" onclick="endoJumpTo('endo_start')"/>
+          <text x="165" y="49" text-anchor="middle" fill="rgba(255,255,255,.45)" font-size="7.4" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">HC + ETT</text>
+
+          <rect id="endo-mm-endo_ett_negative" x="45" y="78" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="endoJumpTo('endo_ett_negative')"/>
+          <text id="endo-mmt-endo_ett_negative" x="105" y="91" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.2" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">ETT negativo</text>
+
+          <rect id="endo-mm-endo_confirmed" x="165" y="78" width="120" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="endoJumpTo('endo_confirmed')"/>
+          <text id="endo-mmt-endo_confirmed" x="225" y="91" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.2" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">ETT positivo</text>
+
+          <rect id="endo-mm-endo_unlikely" x="4" y="116" width="108" height="24" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="endoJumpTo('endo_unlikely')"/>
+          <text id="endo-mmt-endo_unlikely" x="58" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.7" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Baja sospecha</text>
+
+          <rect id="endo-mm-endo_ete" x="120" y="116" width="90" height="24" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="endoJumpTo('endo_ete')"/>
+          <text id="endo-mmt-endo_ete" x="165" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.5" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Alta sospecha → ETE</text>
+
+          <rect id="endo-mm-endo_native_route" x="218" y="116" width="52" height="24" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="endoJumpTo('endo_native_route')"/>
+          <text id="endo-mmt-endo_native_route" x="244" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.1" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Nativa</text>
+
+          <rect id="endo-mm-endo_prosthetic_route" x="274" y="116" width="52" height="24" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="endoJumpTo('endo_prosthetic_route')"/>
+          <text id="endo-mmt-endo_prosthetic_route" x="300" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.9" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Protésica</text>
+        </svg>
+      </div>
+      <div style="display:flex;justify-content:center;padding:2px 0 4px">
+        <button id="endo-minimap-arrow-btn" onclick="toggleMinimapENDO()"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+                 color:rgba(255,255,255,.7);border-radius:20px;padding:3px 16px;
+                 font-size:13px;cursor:pointer;line-height:1;transition:background .15s;font-family:inherit">▼</button>
+      </div>
+      <div class="flow-progress">
+        <div class="progress-track"><div class="progress-fill" id="endo-progress-fill" style="width:0%"></div></div>
+        <div class="progress-info"><span id="endo-progress-txt"></span><span id="endo-path-txt"></span></div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="screen-scroll">
+      <div class="flow-body" id="endo-flow-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══ ENDOCARDITIS TABLES ═══ -->
+  <div id="screen-endo-tables" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" id="endo-tables-back-btn">←</button>
+        <div class="header-title">
+          <h1>Tablas de Referencia</h1>
+          <p>Sospecha Clínica de Endocarditis Infecciosa · G-10</p>
+        </div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="tabs-bar" id="endo-tabs-bar"></div>
+    <div class="screen-scroll" style="overflow:hidden;display:flex;flex-direction:column;flex:1">
+      <div id="endo-tables-panels" style="display:flex;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+
   <!-- ═══ ITU FLOWCHART ═══ -->
   <div id="screen-itu" class="screen">
     <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
@@ -1550,6 +1645,7 @@
 <script src="flowcharts/nav.js"></script>
 <script src="flowcharts/itu.js"></script>
 <script src="flowcharts/meas.js"></script>
+<script src="flowcharts/endo.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>

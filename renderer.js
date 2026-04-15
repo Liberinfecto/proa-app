@@ -11,7 +11,7 @@ const GUIDES = [
   { id:'nav',      icon:'🩻', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:true  },
   { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:true  },
   { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:true  },
-  { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:false },
+  { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:true  },
   { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:false },
   { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:false },
   { id:'artritis', icon:'🦴', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:true  },
@@ -390,6 +390,38 @@ const ITU_JUMP_PATHS = {
   'itu_prost_comp':    ['itu_start','itu_route','itu_inp'],
   'itu_cat_sys':       ['itu_start','itu_route','itu_inp'],
   'itu_sepsis':        ['itu_start','itu_route','itu_inp'],
+};
+
+/* ── ENDO STATE ── */
+let endo_currentNode = 'endo_start';
+let endo_history = [];
+let endo_activeTabIndex = 0;
+let endo_caseContext = null;
+const ENDO_TOTAL_STEPS = 9;
+const ENDO_MM_IDS = [
+  'endo_start','endo_hc_ett','endo_ett_negative','endo_confirmed','endo_ete',
+  'endo_unlikely','endo_ete_negative','endo_repeat',
+  'endo_native_route','endo_prosthetic_route','endo_native_low','endo_native_mrsa'
+];
+const ENDO_JUMP_PATHS = {
+  'endo_start': [],
+  'endo_ett': ['endo_start'],
+  'endo_ett_negative': ['endo_start','endo_ett'],
+  'endo_ete': ['endo_start','endo_ett'],
+  'endo_ete_negative': ['endo_start','endo_ett','endo_ete'],
+  'endo_unlikely': ['endo_start','endo_ett','endo_ett_negative'],
+  'endo_repeat': ['endo_start','endo_ett','endo_ete','endo_ete_negative'],
+  'endo_confirmed': ['endo_start','endo_ett'],
+  'endo_native_route': ['endo_start','endo_ett','endo_confirmed'],
+  'endo_native_low': ['endo_start','endo_ett','endo_confirmed','endo_native_route'],
+  'endo_native_mrsa': ['endo_start','endo_ett','endo_confirmed','endo_native_route'],
+  'endo_prosthetic_route': ['endo_start','endo_ett','endo_confirmed'],
+  'endo_prosthetic_early': ['endo_start','endo_ett','endo_confirmed','endo_prosthetic_route'],
+  'endo_prosthetic_late': ['endo_start','endo_ett','endo_confirmed','endo_prosthetic_route'],
+  'endo_prosthetic_firstmonth': ['endo_start','endo_ett','endo_confirmed','endo_prosthetic_route','endo_prosthetic_early'],
+  'endo_prosthetic_2to12': ['endo_start','endo_ett','endo_confirmed','endo_prosthetic_route','endo_prosthetic_early'],
+  'endo_prosthetic_late_mrsa': ['endo_start','endo_ett','endo_confirmed','endo_prosthetic_route','endo_prosthetic_late'],
+  'endo_prosthetic_late_low': ['endo_start','endo_ett','endo_confirmed','endo_prosthetic_route','endo_prosthetic_late'],
 };
 
 /* ── NAV STATE ── */
@@ -3560,6 +3592,293 @@ function meniScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   ENDOCARDITIS — NAV / MINIMAP / RENDER
+═══════════════════════════════════════════════ */
+function endoGoBack() {
+  if (endo_history.length > 0) {
+    endo_currentNode = endo_history.pop();
+    renderNodeENDO(endo_currentNode);
+  } else {
+    goHome();
+  }
+}
+function endoNavigate(nodeId) {
+  endo_history.push(endo_currentNode);
+  if (
+    (endo_currentNode === 'endo_ett' && (nodeId === 'endo_ett_negative' || nodeId === 'endo_confirmed')) ||
+    endo_currentNode === 'endo_start'
+  ) {
+    endo_caseContext = null;
+  }
+  endo_currentNode = nodeId;
+  renderNodeENDO(nodeId);
+}
+function endoNavigateWithContext(nodeId, context) {
+  endo_history.push(endo_currentNode);
+  endo_currentNode = nodeId;
+  endo_caseContext = context || null;
+  renderNodeENDO(nodeId);
+}
+function endoRestart() {
+  endo_history = [];
+  endo_currentNode = 'endo_start';
+  endo_caseContext = null;
+  renderNodeENDO('endo_start');
+}
+function endoJumpTo(id) {
+  if (id === endo_currentNode) return;
+  if (ENDO_JUMP_PATHS[id]) {
+    endo_history = [...ENDO_JUMP_PATHS[id]];
+    endo_currentNode = id;
+    renderNodeENDO(id);
+  }
+}
+function toggleMinimapENDO() {
+  const panel = document.getElementById('endo-minimap-panel');
+  const btn = document.getElementById('endo-minimap-arrow-btn');
+  if (!panel || !btn) return;
+  const isOpen = panel.classList.toggle('open');
+  btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapENDO(nodeId) {
+  ENDO_MM_IDS.forEach(id => {
+    const rect = document.getElementById('endo-mm-' + id);
+    const txt = document.getElementById('endo-mmt-' + id);
+    if (!rect || !txt) return;
+    const isCurrent = id === nodeId;
+    const isVisited = endo_history.includes(id);
+    rect.setAttribute('fill', isCurrent ? '#f59e0b' : isVisited ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.12)');
+    txt.setAttribute('fill', isCurrent ? '#111827' : isVisited ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.55)');
+    txt.setAttribute('font-weight', isCurrent ? '800' : '600');
+  });
+}
+function renderNodeENDO(nodeId) {
+  const node = NODES_ENDO[nodeId];
+  if (!node) return;
+
+  const pct = Math.round(((node.step - 1) / ENDO_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('endo-progress-fill');
+  const ptxt = document.getElementById('endo-progress-txt');
+  const path = document.getElementById('endo-path-txt');
+  const sub = document.getElementById('endo-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (ptxt) ptxt.textContent = '';
+  if (path) path.textContent = endo_history.length > 0 ? `${endo_history.length} paso${endo_history.length > 1 ? 's' : ''} atrás` : '';
+  const sublabels = {
+    endo_start: 'Evaluación inicial',
+    endo_ett: 'Resultado del ETT',
+    endo_ett_negative: 'ETT negativo',
+    endo_ete: 'Realizar ETE',
+    endo_ete_negative: 'ETT y ETE negativos',
+    endo_unlikely: 'EI poco probable',
+    endo_repeat: 'Reevaluación diagnóstica',
+    endo_confirmed: 'Diagnóstico y plan inicial',
+    endo_native_route: 'Válvula nativa',
+    endo_prosthetic_route: 'Válvula protésica',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || 'Tratamiento empírico';
+
+  let html = '';
+
+  if (node.type === 'endo_start') {
+    const sectionsHTML = node.sections.map(s => `
+      <div class="info-section">
+        <div class="info-section-title">${s.h}</div>
+        ${s.items.map(i => `<div class="info-row"><span class="info-dot">•</span><span>${i}</span></div>`).join('')}
+      </div>
+    `).join('');
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0d3a52 0%,#135f8f 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11.2px;color:rgba(255,255,255,.86);margin-top:4px;line-height:1.45">${node.subtitle}</div>
+        </div>
+        ${sectionsHTML}
+        <div style="display:grid;place-items:center;margin-top:10px;width:100%">
+          ${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesENDO(${b.tableIndex})" style="display:block;width:auto;max-width:260px;padding:6px 12px;font-size:10.5px;border-radius:9px;box-shadow:none;margin:0 auto;text-align:center;white-space:normal">📋 ${b.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="triangle-nav-wrap">
+        <button class="triangle-nav-btn" onclick="endoNavigate('${node.next}')"><div class="tri"></div><span>Siguiente</span></button>
+      </div>`;
+  } else if (node.type === 'endo_question') {
+    html = `
+      <div class="step-card">
+        <div style="background:linear-gradient(135deg,#0d3a52 0%,#135f8f 100%);border-radius:14px;padding:16px 14px 14px;box-shadow:0 10px 24px rgba(13,58,82,.18)">
+          <h2 style="color:white;margin:0;text-align:center">${node.title}</h2>
+        </div>
+        ${node.actionButtons ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesENDO(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}</div>` : ''}
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => {
+          const isDanger = opt.color === '#dc2626';
+          const isGreen = opt.color === '#65a30d';
+          const bg = isDanger ? 'linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%)' : isGreen ? 'linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%)' : 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)';
+          const icon = isDanger ? '🚨' : isGreen ? '✅' : opt.color === '#0d3a52' ? '🫀' : '🩺';
+          const click = opt.context
+            ? `endoNavigateWithContext('${opt.next}','${opt.context}')`
+            : `endoNavigate('${opt.next}')`;
+          return `
+            <button class="origin-choice" style="border-color:${opt.color};background:${bg}" onclick="${click}">
+              <div class="origin-choice-icon" style="background:${opt.color}">${icon}</div>
+              <div class="origin-choice-body">
+                <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+                <div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>
+              </div>
+              <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+            </button>`;
+        }).join('')}
+        <button class="btn-back" onclick="endoGoBack()">← Volver</button>
+      </div>`;
+  } else if (node.type === 'endo_info') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.85;margin-top:6px">${node.subtitle}</p>
+      </div>
+      <div class="treatment-body">
+        ${node.summary ? `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;margin-bottom:10px;font-size:12.5px;color:#334155;line-height:1.45"><strong>Resumen:</strong> ${node.summary}</div>` : ''}
+        ${node.blocks.map(block => {
+          const tone = block.tone === 'green'
+            ? { bg:'#ecfccb', color:'#3f6212' }
+            : { bg:'#ffedd5', color:'#9a3412' };
+          return `<div class="regimen-block" style="background:${tone.bg}">
+            <div class="regimen-label" style="color:${tone.color}">${block.title}</div>
+            ${block.lines.map(line => `<div class="drug-line" style="color:${tone.color}">${line}</div>`).join('')}
+          </div>`;
+        }).join('')}
+        ${node.actionButtons ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesENDO(${b.tableIndex})" style="width:auto;min-width:auto;text-align:center">${b.label}</button>`).join('')}</div>` : ''}
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="endoGoBack()">← Volver</button>
+        <button class="btn-back" onclick="endoRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  } else if (node.type === 'endo_route') {
+    const options = (nodeId === 'endo_confirmed' && endo_caseContext === 'prosthetic_path')
+      ? node.options.filter(opt => opt.next !== 'endo_native_route')
+      : node.options;
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div style="background:linear-gradient(135deg,#b91c1c 0%,#ef4444 100%);border-radius:14px;padding:14px 14px 12px;box-shadow:0 10px 24px rgba(185,28,28,.18)">
+          <h2 style="color:white;margin:0">${node.title}</h2>
+          <p style="font-size:12px;line-height:1.45;color:rgba(255,255,255,.9);margin:6px 0 0">${node.subtitle}</p>
+        </div>
+        ${node.summary ? `<div style="margin-top:12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:14px;padding:12px;font-size:12.5px;color:#7f1d1d;line-height:1.45"><strong>Resumen:</strong> ${node.summary}</div>` : ''}
+        <div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px">
+          ${node.intro.map(item => `<div style="font-size:12.5px;color:#7c2d12;line-height:1.45;margin-bottom:5px">• ${item}</div>`).join('')}
+        </div>
+        ${node.careNote ? `<div style="margin-top:12px;background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);border:1px solid #fda4af;border-radius:14px;padding:13px 12px;text-align:center;box-shadow:var(--shadow-md)"><div style="font-size:11px;font-weight:900;color:#9f1239;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Conducta General</div><div style="font-size:13px;line-height:1.45;color:#881337;font-weight:700">${node.careNote}</div></div>` : ''}
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actions.map(b => `<button class="btn-tables" onclick="showTablesENDO(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}</div>
+      </div>
+      <div class="choices">
+        ${options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="endoNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#ef4444' ? '🫀' : '🩺'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${opt.color}">${opt.tag}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>`).join('')}
+        <button class="btn-back" onclick="endoGoBack()">← Volver</button>
+      </div>`;
+  } else if (node.type === 'endo_treatment') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        <p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.8;margin-top:6px">${node.subtitle}</p>
+      </div>
+      <div class="treatment-body">
+        ${node.summary ? `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;margin-bottom:10px;font-size:12.5px;color:#334155;line-height:1.45"><strong>Resumen:</strong> ${node.summary}</div>` : ''}
+        ${node.regimens.map(r => `<div class="regimen-block" style="background:${r.bg}"><div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}</div>`).join('')}
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px">${node.actions.map(b => `<button class="btn-tables" onclick="showTablesENDO(${b.tableIndex})" style="width:auto;min-width:auto;text-align:center">${b.label}</button>`).join('')}</div>
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="endoGoBack()">← Volver</button>
+        <button class="btn-back" onclick="endoRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('endo-flow-body');
+  if (body) body.innerHTML = html;
+  window.scrollTo(0,0);
+  updateMinimapENDO(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   ENDOCARDITIS TABLES
+═══════════════════════════════════════════════ */
+function showTablesENDO(idx) {
+  document.getElementById('endo-tables-back-btn').onclick = () => showScreen('endo');
+  showScreen('endo-tables');
+  renderENDOTablesUI(idx || 0);
+}
+function renderENDOTablesUI(idx) {
+  endo_activeTabIndex = idx;
+  document.getElementById('endo-tabs-bar').innerHTML = ENDO_TABLES.map((t, i) => `<button class="tab-btn${i===idx?' active':''}" onclick="endoSwipeToTable(${i})">${t.label}</button>`).join('');
+  const cardsHTML = ENDO_TABLES.map((t, i) => {
+    const sectionsHTML = t.sections.map(s => `
+      <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+        <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+        ${s.table ? `
+          <table class="tbl" style="margin-top:4px">
+            <thead><tr>${s.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}</tr></thead>
+            <tbody>${s.table.rows.map(r => `<tr>${r.map(cell => `<td style="font-size:11.3px;color:#334155;white-space:pre-wrap;line-height:1.4">${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        ` : s.items.map(item => {
+          const raw = typeof item === 'string' && item.trim().startsWith('<');
+          return raw
+            ? `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:5px">${item}</div>`
+            : `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:5px">• ${item}</div>`;
+        }).join('')}
+      </div>`).join('');
+    return `<div class="table-swipe-card" id="endo-swipe-card-${i}">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+        <div class="table-swipe-head">${t.title}</div>
+        ${sectionsHTML}
+      </div>
+    </div>`;
+  }).join('');
+  const dotsHTML = ENDO_TABLES.map((_,i) => `<div class="swipe-dot${i===idx?' active':''}" onclick="endoSwipeToTable(${i})"></div>`).join('');
+  document.getElementById('endo-tables-panels').innerHTML = `<div class="tables-swipe-container" id="endo-tables-swipe">${cardsHTML}</div><div class="swipe-dot-nav">${dotsHTML}</div>`;
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('endo-tables-swipe');
+    if (!scroller) return;
+    scroller.scrollLeft = idx * scroller.clientWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== endo_activeTabIndex) {
+          endo_activeTabIndex = active;
+          document.querySelectorAll('#endo-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===active));
+          document.querySelectorAll('#screen-endo-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===active));
+          endoScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+function endoSwipeToTable(i) {
+  endo_activeTabIndex = i;
+  document.querySelectorAll('#endo-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===i));
+  document.querySelectorAll('#screen-endo-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===i));
+  const scroller = document.getElementById('endo-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  endoScrollTabIntoView(i);
+}
+function endoScrollTabIntoView(i) {
+  const bar = document.getElementById('endo-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+/* ═════════════════════════════════════════════
    INFECCIÓN DEL TRACTO URINARIO — ITU
 ═══════════════════════════════════════════════ */
 function ituGoBack() {
@@ -5188,6 +5507,11 @@ function startGuide(id) {
     meni_history = []; meni_currentNode = 'meni_start';
     showScreen('meni');
     renderNodeMENI('meni_start');
+  } else if (id === 'endo') {
+    endo_history = []; endo_currentNode = 'endo_start';
+    endo_caseContext = null;
+    showScreen('endo');
+    renderNodeENDO('endo_start');
   }
 }
 
