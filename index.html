@@ -6,8 +6,10 @@
 <title>PROA · Guías Antimicrobianas</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PROA HC">
+<meta name="apple-mobile-web-app-title" content="PROA Pocket">
 <meta name="theme-color" content="#0d3a52">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="stylesheet" href="styles.css">
 <body>
 <div id="app">
@@ -1833,5 +1835,75 @@
 <script src="flowcharts/dcei.js"></script>
 <script src="flowcharts/cvc.js"></script>
 <script src="renderer.js"></script>
+<script>
+/* ── PWA INSTALL PROMPT ── */
+let _pwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaPrompt = e;
+  setTimeout(showInstallBanner, 1200);
+});
+
+function showInstallBanner() {
+  if (document.getElementById('pwa-banner')) return;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  if (isStandalone) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'pwa-banner';
+  banner.innerHTML = isIOS ? `
+    <div style="display:flex;align-items:center;gap:10px;flex:1">
+      <img src="/icons/icon-192.png" style="width:42px;height:42px;border-radius:10px;flex-shrink:0">
+      <div>
+        <div style="font-weight:800;font-size:13.5px;color:#0d3a52">PROA Pocket</div>
+        <div style="font-size:11.5px;color:#334155;line-height:1.4">Tocá <strong>Compartir</strong> <span style="font-size:14px">⎙</span> y luego <strong>"Agregar a inicio"</strong> para instalar</div>
+      </div>
+    </div>
+    <button onclick="document.getElementById('pwa-banner').remove()" style="background:none;border:none;font-size:18px;color:#64748b;padding:4px;cursor:pointer;flex-shrink:0">✕</button>
+  ` : `
+    <div style="display:flex;align-items:center;gap:10px;flex:1">
+      <img src="/icons/icon-192.png" style="width:42px;height:42px;border-radius:10px;flex-shrink:0">
+      <div>
+        <div style="font-weight:800;font-size:13.5px;color:#0d3a52">PROA Pocket</div>
+        <div style="font-size:11.5px;color:#334155">Instalá la app para acceso rápido</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button onclick="document.getElementById('pwa-banner').remove()" style="background:none;border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;font-size:12px;color:#64748b;cursor:pointer">Ahora no</button>
+      <button id="pwa-install-btn" style="background:#0d3a52;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;color:white;cursor:pointer">Instalar</button>
+    </div>
+  `;
+  Object.assign(banner.style, {
+    position:'fixed', bottom:'0', left:'0', right:'0', zIndex:'9999',
+    background:'white', borderTop:'1px solid #e2e8f0',
+    padding:'12px 14px', display:'flex', alignItems:'center',
+    gap:'10px', boxShadow:'0 -4px 20px rgba(0,0,0,.12)',
+    fontFamily:'system-ui,sans-serif'
+  });
+  document.body.appendChild(banner);
+
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn && _pwaPrompt) {
+    btn.addEventListener('click', async () => {
+      _pwaPrompt.prompt();
+      const { outcome } = await _pwaPrompt.userChoice;
+      _pwaPrompt = null;
+      document.getElementById('pwa-banner')?.remove();
+    });
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('pwa-banner')?.remove();
+  _pwaPrompt = null;
+});
+
+/* ── SERVICE WORKER ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+</script>
 </body>
 </html>
