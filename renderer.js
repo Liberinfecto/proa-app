@@ -14,7 +14,7 @@ const GUIDES = [
   { id:'endo',     icon:'🫀', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:true  },
   { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:true  },
   { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:true  },
-  { id:'artritis', icon:'🦴', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:true  },
+  { id:'artritis', icon:'🦵', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:true  },
   { id:'osteo_f',  icon:'🦴', bg:'#e0f2fe', name:'Osteomielitis de Hueso Largo Vinculada a Fractura',                          ok:true  },
   { id:'osteo_v',  icon:'🧍', bg:'#e0f2fe', name:'Osteomielitis Vertebral / Espondilodiscitis',                                ok:true  },
 ];
