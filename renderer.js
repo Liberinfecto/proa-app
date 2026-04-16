@@ -13,7 +13,7 @@ const GUIDES = [
   { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:true  },
   { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:true  },
   { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:true  },
-  { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:false },
+  { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:true  },
   { id:'artritis', icon:'🦴', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:true  },
   { id:'osteo_f',  icon:'🦴', bg:'#e0f2fe', name:'Osteomielitis de Hueso Largo Vinculada a Fractura',                          ok:true  },
   { id:'osteo_v',  icon:'🧍', bg:'#e0f2fe', name:'Osteomielitis Vertebral / Espondilodiscitis',                                ok:true  },
@@ -390,6 +390,28 @@ const ITU_JUMP_PATHS = {
   'itu_prost_comp':    ['itu_start','itu_route','itu_inp'],
   'itu_cat_sys':       ['itu_start','itu_route','itu_inp'],
   'itu_sepsis':        ['itu_start','itu_route','itu_inp'],
+};
+
+/* ── CVC STATE ── */
+let cvc_currentNode = 'cvc_start';
+let cvc_history = [];
+let cvc_activeTabIndex = 0;
+const CVC_TOTAL_STEPS = 5;
+const CVC_MM_IDS = ['cvc_start','cvc_local_route','cvc_systemic_route','cvc_exit_site','cvc_tunnel_route','cvc_systemic_noflux','cvc_systemic_flux'];
+const CVC_JUMP_PATHS = {
+  'cvc_start': [],
+  'cvc_local_route': ['cvc_start'],
+  'cvc_systemic_route': ['cvc_start'],
+  'cvc_exit_site': ['cvc_start','cvc_local_route'],
+  'cvc_tunnel_route': ['cvc_start','cvc_local_route'],
+  'cvc_tunnel_negative': ['cvc_start','cvc_local_route','cvc_tunnel_route'],
+  'cvc_systemic_noflux': ['cvc_start','cvc_systemic_route'],
+  'cvc_systemic_flux': ['cvc_start','cvc_systemic_route'],
+  'cvc_results': ['cvc_start','cvc_systemic_route','cvc_systemic_noflux'],
+  'cvc_results_negative': ['cvc_start','cvc_systemic_route','cvc_systemic_noflux','cvc_results'],
+  'cvc_colonization': ['cvc_start','cvc_systemic_route','cvc_systemic_noflux','cvc_results'],
+  'cvc_secondary': ['cvc_start','cvc_systemic_route','cvc_systemic_noflux','cvc_results'],
+  'cvc_bac': ['cvc_start','cvc_systemic_route','cvc_systemic_noflux','cvc_results'],
 };
 
 /* ── DCEI STATE ── */
@@ -3612,6 +3634,403 @@ function meniScrollTabIntoView(i) {
 }
 
 /* ═════════════════════════════════════════════
+   CVC — NAV / MINIMAP / RENDER
+═══════════════════════════════════════════════ */
+function cvcGoBack() {
+  if (cvc_history.length > 0) {
+    cvc_currentNode = cvc_history.pop();
+    renderNodeCVC(cvc_currentNode);
+  } else {
+    goHome();
+  }
+}
+function cvcNavigate(nodeId) {
+  cvc_history.push(cvc_currentNode);
+  cvc_currentNode = nodeId;
+  renderNodeCVC(nodeId);
+}
+function cvcRestart() {
+  cvc_history = [];
+  cvc_currentNode = 'cvc_start';
+  renderNodeCVC('cvc_start');
+}
+function cvcJumpTo(id) {
+  if (id === cvc_currentNode) return;
+  if (CVC_JUMP_PATHS[id] !== undefined) {
+    cvc_history = [...CVC_JUMP_PATHS[id]];
+    cvc_currentNode = id;
+    renderNodeCVC(id);
+  }
+}
+function toggleMinimapCVC() {
+  const panel = document.getElementById('cvc-minimap-panel');
+  const btn = document.getElementById('cvc-minimap-arrow-btn');
+  if (!panel || !btn) return;
+  const isOpen = panel.classList.toggle('open');
+  btn.textContent = isOpen ? '▲' : '▼';
+}
+function updateMinimapCVC(nodeId) {
+  CVC_MM_IDS.forEach(id => {
+    const rect = document.getElementById('cvc-mm-' + id);
+    const txt = document.getElementById('cvc-mmt-' + id);
+    if (!rect || !txt) return;
+    const isCurrent = id === nodeId;
+    const isVisited = cvc_history.includes(id);
+    rect.setAttribute('fill', isCurrent ? '#f59e0b' : isVisited ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.12)');
+    txt.setAttribute('fill', isCurrent ? '#111827' : isVisited ? 'rgba(255,255,255,.85)' : 'rgba(255,255,255,.55)');
+    txt.setAttribute('font-weight', isCurrent ? '800' : '600');
+  });
+}
+function renderNodeCVC(nodeId) {
+  const node = NODES_CVC[nodeId];
+  if (!node) return;
+
+  const pct = Math.round(((node.step - 1) / CVC_TOTAL_STEPS) * 100);
+  const fill = document.getElementById('cvc-progress-fill');
+  const ptxt = document.getElementById('cvc-progress-txt');
+  const path = document.getElementById('cvc-path-txt');
+  const sub = document.getElementById('cvc-step-sublabel');
+  if (fill) fill.style.width = pct + '%';
+  if (ptxt) ptxt.textContent = '';
+  if (path) path.textContent = cvc_history.length > 0 ? `${cvc_history.length} paso${cvc_history.length > 1 ? 's' : ''} atrás` : '';
+  const sublabels = {
+    cvc_start: 'Evaluación inicial',
+    cvc_local_route: 'Sin elementos sistémicos',
+    cvc_exit_site: 'Orificio de salida',
+    cvc_tunnel_route: 'Tunelitis',
+    cvc_tunnel_negative: 'Evolución local',
+    cvc_systemic_route: 'Con elementos sistémicos',
+    cvc_systemic_noflux: 'Sin elementos fluxivos',
+    cvc_systemic_flux: 'Con elementos fluxivos',
+    cvc_results: 'Resultados microbiológicos',
+    cvc_results_negative: 'Resultados negativos',
+    cvc_colonization: 'Colonización',
+    cvc_secondary: 'Colonización secundaria',
+    cvc_bac: 'BAC',
+  };
+  if (sub) sub.textContent = sublabels[nodeId] || 'Tratamiento';
+
+  let html = '';
+
+  if (node.type === 'cvc_start') {
+    html = `
+      <div class="step-card" style="padding:14px">
+        <div class="sospecha-banner" style="background:linear-gradient(135deg,#0d3a52 0%,#135f8f 100%)">
+          <h2>${node.title}</h2>
+          <div style="font-size:11.2px;color:rgba(255,255,255,.88);margin-top:4px;line-height:1.45">${node.subtitle}</div>
+        </div>
+        ${node.noteHtml ? `<div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px;font-size:12px;color:#9a3412;line-height:1.5;font-weight:700">${node.noteHtml}</div>` : ''}
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:12px">
+          ${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesCVC(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 10px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="cvcNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '🚨' : '💉'}</div>
+            <div class="origin-choice-body">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              <div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>`).join('')}
+      </div>`;
+  } else if (node.type === 'cvc_question') {
+    html = `
+      <div class="step-card">
+        <div style="background:linear-gradient(135deg,#0d3a52 0%,#135f8f 100%);border-radius:14px;padding:16px 14px 14px;box-shadow:0 10px 24px rgba(13,58,82,.18)">
+          <h2 style="color:white;margin:0;text-align:center">${node.title}</h2>
+          ${node.subtitle ? `<div style="font-size:11.3px;color:rgba(255,255,255,.86);margin-top:6px;line-height:1.45;text-align:center">${node.subtitle}</div>` : ''}
+        </div>
+        ${node.noteHtml ? `<div style="margin-top:12px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:12px">${node.noteHtml}</div>` : ''}
+        ${node.actionButtons ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesCVC(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}</div>` : ''}
+      </div>
+      <div class="choices">
+        ${node.options.map(opt => {
+          const bg = opt.color === '#dc2626'
+            ? 'linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%)'
+            : opt.color === '#65a30d'
+              ? 'linear-gradient(180deg,#f7fee7 0%,#ecfccb 100%)'
+              : opt.color === '#1d4ed8'
+                ? 'linear-gradient(180deg,#eff6ff 0%,#dbeafe 100%)'
+                : 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)';
+          const icon = opt.color === '#dc2626'
+            ? '🚨'
+            : opt.color === '#65a30d'
+              ? '✅'
+              : opt.color === '#1d4ed8'
+                ? '🩸'
+                : '💉';
+          if (opt.static) {
+            return `
+              <div style="border:1.5px solid ${opt.color};background:${bg};border-radius:18px;padding:14px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 18px rgba(101,163,13,.10)">
+                <div class="origin-choice-icon" style="background:${opt.color}">${icon}</div>
+                <div class="origin-choice-body">
+                  <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+                  ${opt.desc ? `<div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>` : ''}
+                </div>
+              </div>`;
+          }
+          return `
+            <div>
+              <button class="origin-choice" style="border-color:${opt.color};background:${bg}" onclick="cvcNavigate('${opt.next}')">
+                <div class="origin-choice-icon" style="background:${opt.color}">${icon}</div>
+                <div class="origin-choice-body" style="${!opt.desc ? 'display:flex;align-items:center;min-height:44px;' : ''}">
+                  <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+                  ${opt.desc ? `<div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>` : ''}
+                </div>
+                <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+              </button>
+              ${opt.belowFlow ? `
+                <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1;margin-top:2px">▼</div>
+                <div style="background:linear-gradient(180deg,#fef3c7 0%,#fde68a 100%);border:1.5px solid #f59e0b;border-radius:14px;padding:12px 12px;text-align:center;box-shadow:0 8px 18px rgba(245,158,11,.12)">
+                  <div style="font-size:12.2px;line-height:1.42;color:#78350f;font-weight:800">${opt.belowFlow.text}</div>
+                </div>` : ''}
+            </div>`;
+        }).join('')}
+        ${node.dualFlow ? `
+          <div style="display:grid;gap:8px;margin-top:6px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch">
+              <div style="background:linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);border:1.5px solid ${node.dualFlow.leftColor};border-radius:14px;padding:14px 12px;text-align:center;box-shadow:0 8px 18px rgba(245,158,11,.10)">
+                <div style="font-size:12.4px;line-height:1.38;color:#b45309;font-weight:800">${node.dualFlow.leftTitle}</div>
+              </div>
+              <div style="background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);border:1.5px solid ${node.dualFlow.rightColor};border-radius:14px;padding:14px 12px;text-align:center;box-shadow:0 8px 18px rgba(220,38,38,.10)">
+                <div style="font-size:12.4px;line-height:1.38;color:#dc2626;font-weight:800">${node.dualFlow.rightTitle}</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1">▼</div>
+              <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1">▼</div>
+            </div>
+            <button onclick="cvcNavigate('${node.dualFlow.buttonNext}')" style="appearance:none;border:2px solid #111827;border-radius:14px;padding:14px 14px;text-align:center;background:white;box-shadow:0 8px 18px rgba(17,24,39,.08);cursor:pointer">
+              <div style="font-size:12.4px;line-height:1.4;color:#111827;font-weight:800">${node.dualFlow.buttonLabel}</div>
+            </button>
+          </div>` : ''}
+        <button class="btn-back" onclick="cvcGoBack()">← Volver</button>
+      </div>`;
+  } else if (node.type === 'cvc_info') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        ${node.subtitle ? `<p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.85;margin-top:6px">${node.subtitle}</p>` : ''}
+      </div>
+      <div class="treatment-body">
+        ${node.followUpDiagram ? `
+          <div style="display:grid;gap:8px">
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;align-items:stretch">
+              <div style="background:white;border:1.5px solid #f59e0b;border-radius:14px;padding:14px 12px;text-align:center;box-shadow:0 8px 18px rgba(245,158,11,.10);display:flex;align-items:center;justify-content:center;min-height:108px">
+                <div style="font-size:12px;line-height:1.42;color:#1f2937;font-weight:700">${node.followUpDiagram.topLeft}</div>
+              </div>
+              <div style="background:white;border:1.5px solid #f59e0b;border-radius:14px;padding:14px 16px;text-align:center;box-shadow:0 8px 18px rgba(245,158,11,.10);display:flex;align-items:center;justify-content:center;min-height:108px">
+                <div style="font-size:12.2px;line-height:1.42;color:#92400e;font-weight:800">${node.followUpDiagram.topRight}</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;align-items:center">
+              <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1">▼</div>
+              <div style="position:relative;height:18px;color:#eab308;font-size:18px;font-weight:900;line-height:1">
+                <span style="position:absolute;left:25%;top:0">▼</span>
+                <span style="position:absolute;left:78%;top:0">▼</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;align-items:stretch">
+              <div style="background:linear-gradient(180deg,#fffbeb 0%,#fde68a 100%);border:1.5px solid #f59e0b;border-radius:14px;padding:16px 16px;text-align:center;box-shadow:0 8px 18px rgba(245,158,11,.12);display:flex;align-items:center;justify-content:center;min-height:132px">
+                <div style="font-size:12.1px;line-height:1.42;color:#78350f;font-weight:800">${node.followUpDiagram.bottomLeft}</div>
+              </div>
+              <button onclick="cvcNavigate('${node.followUpDiagram.bottomRightNext}')" style="appearance:none;background:white;border:2px solid #111827;border-radius:14px;padding:16px 12px;text-align:center;box-shadow:0 8px 18px rgba(17,24,39,.08);display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;min-height:132px;cursor:pointer">
+                <div style="font-size:12px;line-height:1.4;color:#111827;font-weight:800">${node.followUpDiagram.bottomRight}</div>
+                <div style="font-size:20px;line-height:1;color:#111827;font-weight:900">›</div>
+              </button>
+            </div>
+            <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1">▼</div>
+            <div style="background:white;border:2px solid #111827;border-radius:14px;padding:12px 12px;text-align:center;box-shadow:0 8px 18px rgba(17,24,39,.08)">
+              <div style="font-size:12.2px;line-height:1.42;color:#111827;font-weight:800">${node.followUpDiagram.finalBottom}</div>
+            </div>
+          </div>` : ''}
+        ${node.bacCompare ? `
+          <div style="display:grid;gap:8px">
+            <div style="background:#eff6ff;border:1.5px solid #38bdf8;border-radius:14px;padding:10px 12px;text-align:center;box-shadow:0 8px 18px rgba(56,189,248,.12)">
+              <div style="font-size:12.1px;line-height:1.4;color:#0f172a;font-weight:800">${node.bacCompare.topBox}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+              <div style="display:flex;justify-content:center;align-items:center;color:#f59e0b;font-size:18px;font-weight:900;line-height:1">▼</div>
+              <div style="display:flex;justify-content:center;align-items:center;color:#ef4444;font-size:18px;font-weight:900;line-height:1">▼</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1.5px solid #f59e0b;border-bottom:none;border-radius:14px 14px 0 0;overflow:hidden">
+              <div style="background:#ffedd5;padding:12px 10px;border-right:1px solid #fdba74">
+                ${node.bacCompare.leftItems.map(item => `<div style="font-size:12px;line-height:1.38;color:#7c2d12;font-weight:700;margin-bottom:6px">• ${item}</div>`).join('')}
+              </div>
+              <div style="background:#fee2e2;padding:12px 10px">
+                ${node.bacCompare.rightItems.map(item => `<div style="font-size:12px;line-height:1.38;color:#991b1b;font-weight:700;margin-bottom:6px">• ${item}</div>`).join('')}
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1.5px solid #f59e0b;border-radius:0 0 14px 14px;overflow:hidden;box-shadow:0 8px 18px rgba(245,158,11,.10)">
+              <div style="background:linear-gradient(180deg,#fdba74 0%,#fb923c 100%);padding:12px 10px;text-align:center;border-right:1px solid #f97316">
+                <div style="font-size:12.1px;line-height:1.38;color:#431407;font-weight:800">${node.bacCompare.leftBottom}</div>
+              </div>
+              <div style="background:linear-gradient(180deg,#f87171 0%,#ef4444 100%);padding:12px 10px;text-align:center">
+                <div style="font-size:12.1px;line-height:1.38;color:white;font-weight:800">${node.bacCompare.rightBottom}</div>
+              </div>
+            </div>
+            <button onclick="showTablesCVC(${node.bacCompare.finalButtonTableIndex})" style="appearance:none;border:2px solid #111827;border-radius:14px;padding:12px 12px;text-align:center;background:white;box-shadow:0 8px 18px rgba(17,24,39,.08);cursor:pointer">
+              <div style="font-size:12.2px;line-height:1.42;color:#111827;font-weight:800">${node.bacCompare.finalButtonLabel}</div>
+            </button>
+          </div>` : ''}
+        ${(node.blocks || []).map(block => {
+          const tone = block.tone === 'green'
+            ? { bg:'#ecfccb', color:'#3f6212' }
+            : block.tone === 'teal'
+              ? { bg:'#ccfbf1', color:'#115e59' }
+            : { bg:'#ffedd5', color:'#9a3412' };
+          return `<div class="regimen-block" style="background:${tone.bg}">
+            <div class="regimen-label" style="color:${tone.color}">${block.title}</div>
+            ${block.lines.map(line => `<div class="drug-line" style="color:${tone.color}">${line}</div>`).join('')}
+          </div>`;
+        }).join('')}
+        ${node.nextButton ? `<div style="display:flex;justify-content:center;margin-top:10px"><button class="triangle-nav-btn" onclick="cvcNavigate('${node.nextButton.next}')"><div class="tri"></div><span>${node.nextButton.label}</span></button></div>` : ''}
+        ${node.actions ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actions.map(b => `<button class="btn-tables" onclick="showTablesCVC(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}</div>` : ''}
+      </div>
+      <div class="choices" style="margin-top:10px">
+        <button class="btn-back" onclick="cvcGoBack()">← Volver</button>
+        <button class="btn-back" onclick="cvcRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  } else if (node.type === 'cvc_treatment') {
+    html = `
+      <div class="treatment-header" style="background:${node.headerColor}">
+        <h2>${node.title}</h2>
+        ${node.subtitle ? `<p style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;opacity:.85;margin-top:6px">${node.subtitle}</p>` : ''}
+      </div>
+      <div class="treatment-body">
+        ${node.summary ? `<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:11px 12px;margin-bottom:10px;font-size:12.5px;color:#334155;line-height:1.45"><strong>Resumen:</strong> ${node.summary}</div>` : ''}
+        ${node.criteria ? `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:11px 12px;margin-bottom:10px"><div style="font-size:11px;font-weight:900;color:#9a3412;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Cualquiera de los siguientes</div>${node.criteria.map(item => `<div style="font-size:12px;color:#7c2d12;line-height:1.45;margin-bottom:5px">• ${item}</div>`).join('')}</div>` : ''}
+        ${node.flowStack ? `<div style="display:grid;gap:8px">${node.flowStack.map((item, idx) => {
+          const isGreen = item.bg === 'green';
+          const bg = isGreen ? 'linear-gradient(180deg,#d9f99d 0%,#bef264 100%)' : 'white';
+          const border = isGreen ? '#84cc16' : '#d1d5db';
+          const color = isGreen ? '#365314' : '#1f2937';
+          return `${idx ? `<div style="display:flex;justify-content:center;align-items:center;color:#84cc16;font-size:18px;font-weight:900;line-height:1">▼</div>` : ''}<div style="background:${bg};border:1.5px solid ${border};border-radius:14px;padding:14px 12px;text-align:center;box-shadow:0 8px 18px rgba(132,204,22,.10)"><div style="font-size:12.7px;line-height:1.45;color:${color};font-weight:700">${item.text}</div></div>`;
+        }).join('')}</div>` : ''}
+        ${node.tunnelFlow ? `
+          <div style="display:grid;gap:8px">
+            <div class="regimen-block" style="background:#fff7ed">
+              <div class="regimen-label" style="color:#9a3412">Solicitar</div>
+              <div class="drug-line">${node.tunnelFlow.request}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+              <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1">▼</div>
+              <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1">▼</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1.5px solid #f59e0b;border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(245,158,11,.10)">
+              <div style="background:white;padding:12px 10px;text-align:center;border-right:1px solid #fed7aa"><div style="font-size:12px;line-height:1.4;color:#1f2937;font-weight:700">${node.tunnelFlow.decisions[0]}</div></div>
+              <div style="background:white;padding:12px 10px;text-align:center"><div style="font-size:12px;line-height:1.4;color:#1f2937;font-weight:700">${node.tunnelFlow.decisions[1]}</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+              <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1">▼</div>
+              <div style="display:flex;justify-content:center;align-items:center;color:#eab308;font-size:18px;font-weight:900;line-height:1">▼</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1.5px solid #eab308;border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(234,179,8,.12)">
+              <div style="background:linear-gradient(180deg,#fef9c3 0%,#fde68a 100%);padding:12px 10px;text-align:center;border-right:1px solid #fcd34d"><div style="font-size:12px;line-height:1.4;color:#713f12;font-weight:700">${node.tunnelFlow.treatments[0]}</div></div>
+              <div style="background:linear-gradient(180deg,#fef9c3 0%,#fde68a 100%);padding:12px 10px;text-align:center"><div style="font-size:12px;line-height:1.4;color:#713f12;font-weight:700">${node.tunnelFlow.treatments[1]}</div></div>
+            </div>
+          </div>` : ''}
+        ${(node.regimens || []).map(r => `<div class="regimen-block" style="background:${r.bg}"><div class="regimen-label" style="color:${r.labelColor}">${r.label}</div>${r.lines.map(l => `<div class="drug-line">${l}</div>`).join('')}</div>`).join('')}
+        ${node.plainNote ? `<div style="margin-top:10px;background:linear-gradient(180deg,#fef3c7 0%,#fde68a 100%);border:1px solid #f59e0b;border-radius:14px;padding:12px 12px;text-align:center;box-shadow:0 8px 20px rgba(245,158,11,.12)"><div style="font-size:11px;font-weight:900;color:#92400e;text-transform:uppercase;letter-spacing:.45px;margin-bottom:4px">Duración</div><div style="font-size:13px;line-height:1.4;color:#78350f;font-weight:800">${node.plainNote}</div></div>` : ''}
+        ${node.careNote ? `<div style="margin-top:12px;background:linear-gradient(180deg,#fff1f2 0%,#ffe4e6 100%);border:1px solid #fda4af;border-radius:14px;padding:13px 12px;text-align:center;box-shadow:var(--shadow-md)"><div style="font-size:11px;font-weight:900;color:#9f1239;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Conducta clave</div><div style="font-size:13px;line-height:1.45;color:#881337;font-weight:700">${node.careNote}</div></div>` : ''}
+        ${node.actions ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actions.map(b => `<button class="btn-tables" onclick="showTablesCVC(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}</div>` : ''}
+      </div>
+      <div class="choices" style="margin-top:10px">
+        ${node.options ? node.options.map(opt => `
+          <button class="origin-choice" style="border-color:${opt.color};background:white" onclick="cvcNavigate('${opt.next}')">
+            <div class="origin-choice-icon" style="background:${opt.color}">${opt.color === '#dc2626' ? '🚨' : opt.color === '#65a30d' ? '✅' : '💉'}</div>
+            <div class="origin-choice-body" style="${!opt.desc ? 'display:flex;align-items:center;min-height:44px;' : ''}">
+              <div class="origin-choice-label" style="color:${opt.color}">${opt.title}</div>
+              ${opt.desc ? `<div class="origin-choice-tag" style="color:${opt.color}">${opt.desc}</div>` : ''}
+            </div>
+            <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
+          </button>`).join('') : ''}
+        <button class="btn-back" onclick="cvcGoBack()">← Volver</button>
+        <button class="btn-back" onclick="cvcRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
+      </div>`;
+  }
+
+  const body = document.getElementById('cvc-flow-body');
+  if (body) body.innerHTML = html;
+  window.scrollTo(0,0);
+  updateMinimapCVC(nodeId);
+}
+
+/* ═════════════════════════════════════════════
+   CVC TABLES
+═══════════════════════════════════════════════ */
+function showTablesCVC(idx) {
+  document.getElementById('cvc-tables-back-btn').onclick = () => showScreen('cvc');
+  showScreen('cvc-tables');
+  renderCVCTablesUI(idx || 0);
+}
+function renderCVCTablesUI(idx) {
+  cvc_activeTabIndex = idx;
+  document.getElementById('cvc-tabs-bar').innerHTML = CVC_TABLES.map((t, i) => `<button class="tab-btn${i===idx?' active':''}" onclick="cvcSwipeToTable(${i})">${t.label}</button>`).join('');
+  const cardsHTML = CVC_TABLES.map((t, i) => {
+    const sectionsHTML = t.sections.map(s => `
+      <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
+        <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>
+        ${s.table ? `
+          <table class="tbl" style="margin-top:4px">
+            <thead><tr>${s.table.heads.map(h => `<th style="background:#dbeafe;color:#0c4a6e;font-size:11px;font-weight:800;padding:7px 8px;text-align:left;border-bottom:1px solid #bfdbfe">${h}</th>`).join('')}</tr></thead>
+            <tbody>${s.table.rows.map(r => `<tr>${r.map(cell => `<td style="font-size:11.3px;color:#334155;white-space:pre-wrap;line-height:1.4">${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>
+        ` : s.items.map(item => {
+          const raw = typeof item === 'string' && item.trim().startsWith('<');
+          return raw
+            ? `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:5px">${item}</div>`
+            : `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:5px">• ${item}</div>`;
+        }).join('')}
+      </div>`).join('');
+    return `<div class="table-swipe-card" id="cvc-swipe-card-${i}">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
+        <div class="table-swipe-head">${t.title}</div>
+        ${sectionsHTML}
+      </div>
+    </div>`;
+  }).join('');
+  const dotsHTML = CVC_TABLES.map((_,i) => `<div class="swipe-dot${i===idx?' active':''}" onclick="cvcSwipeToTable(${i})"></div>`).join('');
+  document.getElementById('cvc-tables-panels').innerHTML = `<div class="tables-swipe-container" id="cvc-tables-swipe">${cardsHTML}</div><div class="swipe-dot-nav">${dotsHTML}</div>`;
+  requestAnimationFrame(() => {
+    const scroller = document.getElementById('cvc-tables-swipe');
+    if (!scroller) return;
+    scroller.scrollLeft = idx * scroller.clientWidth;
+    let ticking = false;
+    scroller.onscroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const width = scroller.clientWidth || 1;
+        const active = Math.round(scroller.scrollLeft / width);
+        if (active !== cvc_activeTabIndex) {
+          cvc_activeTabIndex = active;
+          document.querySelectorAll('#cvc-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===active));
+          document.querySelectorAll('#screen-cvc-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===active));
+          cvcScrollTabIntoView(active);
+        }
+        ticking = false;
+      });
+    };
+  });
+}
+function cvcSwipeToTable(i) {
+  cvc_activeTabIndex = i;
+  document.querySelectorAll('#cvc-tabs-bar .tab-btn').forEach((b,j)=>b.classList.toggle('active', j===i));
+  document.querySelectorAll('#screen-cvc-tables .swipe-dot').forEach((d,j)=>d.classList.toggle('active', j===i));
+  const scroller = document.getElementById('cvc-tables-swipe');
+  if (scroller) scroller.scrollTo({ left: i * scroller.clientWidth, behavior: 'smooth' });
+  cvcScrollTabIntoView(i);
+}
+function cvcScrollTabIntoView(i) {
+  const bar = document.getElementById('cvc-tabs-bar');
+  const btn = bar && bar.querySelectorAll('.tab-btn')[i];
+  if (btn) btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+
+/* ═════════════════════════════════════════════
    DCEI — NAV / MINIMAP / RENDER
 ═══════════════════════════════════════════════ */
 function dceiGoBack() {
@@ -5820,6 +6239,10 @@ function startGuide(id) {
     dcei_history = []; dcei_currentNode = 'dcei_start';
     showScreen('dcei');
     renderNodeDCEI('dcei_start');
+  } else if (id === 'cvc') {
+    cvc_history = []; cvc_currentNode = 'cvc_start';
+    showScreen('cvc');
+    renderNodeCVC('cvc_start');
   }
 }
 

@@ -1272,6 +1272,98 @@
     </div>
   </div>
 
+  <!-- ═══ CVC FLOWCHART ═══ -->
+  <div id="screen-cvc" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" onclick="goHome()">←</button>
+        <div class="header-title">
+          <h1>Infección Asociada a Catéteres Centrales</h1>
+          <p id="cvc-step-sublabel">Evaluación inicial</p>
+        </div>
+        <button class="proa-pill" onclick="showTablesCVC(0)">Tablas</button>
+      </div>
+      <div class="minimap-panel" id="cvc-minimap-panel">
+        <svg id="cvc-minimap-svg" viewBox="0 0 340 148" width="100%" style="display:block;overflow:visible">
+          <defs>
+            <marker id="arr-cvc" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+              <polygon points="0,0 5,2.5 0,5" fill="rgba(255,255,255,.3)"/>
+            </marker>
+          </defs>
+          <line x1="170" y1="28" x2="170" y2="48" stroke="rgba(255,255,255,.24)" stroke-width="1.4"/>
+          <line x1="170" y1="48" x2="170" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="170" y1="68" x2="91" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="170" y1="68" x2="249" y2="68" stroke="rgba(255,255,255,.22)" stroke-width="1.2"/>
+          <line x1="91" y1="68" x2="91" y2="78" stroke="rgba(255,255,255,.22)" stroke-width="1.2" marker-end="url(#arr-cvc)"/>
+          <line x1="249" y1="68" x2="249" y2="78" stroke="rgba(255,255,255,.22)" stroke-width="1.2" marker-end="url(#arr-cvc)"/>
+          <line x1="91" y1="98" x2="91" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="91" y1="108" x2="42" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="91" y1="108" x2="124" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="42" y1="108" x2="42" y2="118" stroke="rgba(255,255,255,.18)" stroke-width="1.1" marker-end="url(#arr-cvc)"/>
+          <line x1="124" y1="108" x2="124" y2="118" stroke="rgba(255,255,255,.18)" stroke-width="1.1" marker-end="url(#arr-cvc)"/>
+          <line x1="249" y1="98" x2="249" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="249" y1="108" x2="214" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="249" y1="108" x2="297" y2="108" stroke="rgba(255,255,255,.18)" stroke-width="1.1"/>
+          <line x1="214" y1="108" x2="214" y2="118" stroke="rgba(255,255,255,.18)" stroke-width="1.1" marker-end="url(#arr-cvc)"/>
+          <line x1="297" y1="108" x2="297" y2="118" stroke="rgba(255,255,255,.18)" stroke-width="1.1" marker-end="url(#arr-cvc)"/>
+
+          <rect id="cvc-mm-cvc_start" x="50" y="8" width="240" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="cvcJumpTo('cvc_start')"/>
+          <text id="cvc-mmt-cvc_start" x="170" y="21" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="7.4" font-family="system-ui,sans-serif" font-weight="700" style="pointer-events:none">Catéter central</text>
+
+          <rect id="cvc-mm-cvc_local_route" x="16" y="78" width="150" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="cvcJumpTo('cvc_local_route')"/>
+          <text id="cvc-mmt-cvc_local_route" x="91" y="91" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin sistémicos</text>
+
+          <rect id="cvc-mm-cvc_systemic_route" x="174" y="78" width="150" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="cvcJumpTo('cvc_systemic_route')"/>
+          <text id="cvc-mmt-cvc_systemic_route" x="249" y="91" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="6.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con sistémicos</text>
+
+          <rect id="cvc-mm-cvc_exit_site" x="4" y="118" width="76" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="cvcJumpTo('cvc_exit_site')"/>
+          <text id="cvc-mmt-cvc_exit_site" x="42" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Orificio</text>
+
+          <rect id="cvc-mm-cvc_tunnel_route" x="86" y="118" width="76" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="cvcJumpTo('cvc_tunnel_route')"/>
+          <text id="cvc-mmt-cvc_tunnel_route" x="124" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.8" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Túnel</text>
+
+          <rect id="cvc-mm-cvc_systemic_noflux" x="176" y="118" width="76" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="cvcJumpTo('cvc_systemic_noflux')"/>
+          <text id="cvc-mmt-cvc_systemic_noflux" x="214" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.6" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Sin fluxivos</text>
+
+          <rect id="cvc-mm-cvc_systemic_flux" x="258" y="118" width="78" height="20" rx="5" fill="rgba(255,255,255,.12)" style="cursor:pointer" onclick="cvcJumpTo('cvc_systemic_flux')"/>
+          <text id="cvc-mmt-cvc_systemic_flux" x="297" y="131" text-anchor="middle" fill="rgba(255,255,255,.55)" font-size="5.5" font-family="system-ui,sans-serif" font-weight="600" style="pointer-events:none">Con fluxivos</text>
+        </svg>
+      </div>
+      <div style="display:flex;justify-content:center;padding:2px 0 4px">
+        <button id="cvc-minimap-arrow-btn" onclick="toggleMinimapCVC()"
+          style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+                 color:rgba(255,255,255,.7);border-radius:20px;padding:3px 16px;
+                 font-size:13px;cursor:pointer;line-height:1;transition:background .15s;font-family:inherit">▼</button>
+      </div>
+      <div class="flow-progress">
+        <div class="progress-track"><div class="progress-fill" id="cvc-progress-fill" style="width:0%"></div></div>
+        <div class="progress-info"><span id="cvc-progress-txt"></span><span id="cvc-path-txt"></span></div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="screen-scroll">
+      <div class="flow-body" id="cvc-flow-body"></div>
+    </div>
+  </div>
+
+  <!-- ═══ CVC TABLES ═══ -->
+  <div id="screen-cvc-tables" class="screen">
+    <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
+      <div class="header-row">
+        <button class="back-btn" id="cvc-tables-back-btn">←</button>
+        <div class="header-title">
+          <h1>Tablas de Referencia</h1>
+          <p>Infección Asociada a Catéteres Centrales · G-12</p>
+        </div>
+      </div>
+    </div>
+    <div style="height:8px;margin:0 10px;background:linear-gradient(160deg,#1a5472,#0d3a52);border-radius:0 0 16px 16px;box-shadow:0 8px 22px rgba(0,0,0,.18)"></div>
+    <div class="tabs-bar" id="cvc-tabs-bar"></div>
+    <div class="screen-scroll" style="overflow:hidden;display:flex;flex-direction:column;flex:1">
+      <div id="cvc-tables-panels" style="display:flex;flex-direction:column;flex:1"></div>
+    </div>
+  </div>
+
   <!-- ═══ ITU FLOWCHART ═══ -->
   <div id="screen-itu" class="screen">
     <div class="app-header" style="margin:8px 10px 0;border-radius:16px 16px 0 0;box-shadow:none">
@@ -1739,6 +1831,7 @@
 <script src="flowcharts/meas.js"></script>
 <script src="flowcharts/endo.js"></script>
 <script src="flowcharts/dcei.js"></script>
+<script src="flowcharts/cvc.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>
