@@ -11,7 +11,7 @@ const GUIDES = [
   { id:'nav',      icon:'🩻', bg:'#e0f2fe', name:'Neumonía Asociada a la Ventilación Mecánica (NAV)',                           ok:true  },
   { id:'itu',      icon:'💧', bg:'#d1fae5', name:'Infección del Tracto Urinario (ITU)',                                         ok:true  },
   { id:'meni',     icon:'🧠', bg:'#fef3c7', name:'Meningoencefalitis Aguda Comunitaria en Paciente Inmunocompetente',           ok:true  },
-  { id:'endo',     icon:'❤️', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:true  },
+  { id:'endo',     icon:'🫀', bg:'#fee2e2', name:'Sospecha Clínica de Endocarditis Infecciosa (EI)',                           ok:true  },
   { id:'dcei',     icon:'⚡', bg:'#fee2e2', name:'DCEI y Sospecha de Proceso Infeccioso',                                      ok:true  },
   { id:'cvc',      icon:'💉', bg:'#d1fae5', name:'Infección Asociada a Catéteres Centrales',                                   ok:true  },
   { id:'artritis', icon:'🦴', bg:'#e0f2fe', name:'Artritis Séptica Nativa Aguda',                                              ok:true  },
