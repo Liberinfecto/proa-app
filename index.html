@@ -16,23 +16,32 @@
 
   <!-- ═══ HOME ═══ -->
   <div id="screen-home" class="screen active">
-    <div class="app-header" style="border-radius:16px 16px 0 0;margin:8px 10px 0;box-shadow:none">
-      <div class="header-row">
-        <span class="proa-pill">PROA</span>
-        <div class="header-title">
-          <h1>Guías Antimicrobianas</h1>
-          <p>Infectología · UdelaR</p>
-        </div>
+    <div class="app-header" style="border-radius:16px 16px 0 0;margin:8px 10px 0;box-shadow:none;position:relative;overflow:hidden">
+      <!-- anillos decorativos de fondo -->
+      <div style="pointer-events:none;position:absolute;top:-35px;right:-35px;width:150px;height:150px;border-radius:50%;border:2px solid rgba(255,255,255,.06)"></div>
+      <div style="pointer-events:none;position:absolute;top:-12px;right:-12px;width:95px;height:95px;border-radius:50%;border:2px solid rgba(255,255,255,.07)"></div>
+      <div style="pointer-events:none;position:absolute;bottom:24px;left:-18px;width:65px;height:65px;border-radius:50%;background:rgba(255,255,255,.03)"></div>
+      <div style="padding:20px 18px 0;position:relative">
+        <!-- POCKET en diagonal, estilo grafiti/marca de agua -->
+        <div style="pointer-events:none;user-select:none;position:absolute;top:8px;right:10px;font-size:42px;font-weight:900;font-style:italic;color:rgba(255,255,255,.09);transform:rotate(-16deg);letter-spacing:3px;line-height:1">POCKET</div>
+        <div style="font-size:10.5px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:8px">Infectología · UdelaR</div>
+        <h1 style="font-size:30px;font-weight:900;color:white;letter-spacing:-.5px;line-height:1.05;margin:0 0 8px">Guías<br>Antimicrobianas</h1>
+        <p style="font-size:12px;color:rgba(255,255,255,.5);margin:0;line-height:1.5">Flujogramas clínicos interactivos de apoyo<br>a la toma de decisiones en antimicrobioterapia.</p>
+      </div>
+      <div style="margin-top:16px;padding:9px 18px;background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.07);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:10px;color:rgba(255,255,255,.32);letter-spacing:.4px;text-transform:uppercase">Uso clínico · Sin fines de lucro</span>
+        <a href="#aviso-legal" onclick="setTimeout(()=>document.getElementById('aviso-legal').scrollIntoView({behavior:'smooth'}),50);return false;" style="font-size:10.5px;color:rgba(255,255,255,.5);text-decoration:none;letter-spacing:.2px;display:flex;align-items:center;gap:3px">Leer aviso legal <span style="font-size:14px;line-height:1">↓</span></a>
       </div>
     </div>
     <div class="screen-scroll">
     <div class="section-label">Flujogramas Clínicos</div>
     <div class="guide-list" id="guide-list"></div>
-    <div style="margin:18px 10px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px 15px;font-family:system-ui,sans-serif">
+    <div id="aviso-legal" style="margin:18px 10px 8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:14px 15px;font-family:system-ui,sans-serif">
       <div style="font-size:11px;font-weight:900;color:#0d3a52;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Aviso legal</div>
       <p style="font-size:11.5px;color:#334155;line-height:1.55;margin:0 0 8px">El contenido clínico de estos flujogramas es propiedad intelectual de la <strong>Unidad Académica de Enfermedades Infecciosas, Facultad de Medicina, UdelaR</strong>. Los materiales originales están disponibles en:</p>
       <a href="https://www.infectologia.edu.uy/divulgacion-medica/novedades-y-avances/flujogramas-infectologia-al-dia-2023" target="_blank" rel="noopener" style="display:block;font-size:11px;color:#0d3a52;word-break:break-all;margin-bottom:10px;font-weight:600">infectologia.edu.uy → Flujogramas Infectología al día 2023</a>
-      <p style="font-size:11.5px;color:#334155;line-height:1.55;margin:0 0 8px">Esta aplicación es un <strong>aporte personal</strong> que adapta dichos materiales en formato interactivo para facilitar su uso en la práctica clínica. No sustituye el criterio médico ni el juicio clínico del profesional tratante.</p>
+      <p style="font-size:11.5px;color:#334155;line-height:1.55;margin:0 0 8px">Esta aplicación es un <strong>aporte personal sin fines de lucro</strong> que adapta dichos materiales en formato interactivo para facilitar su uso en la práctica clínica. No sustituye el criterio médico ni el juicio clínico del profesional tratante.</p>
+      <p style="font-size:11.5px;color:#334155;line-height:1.55;margin:0 0 8px"><strong>Queda expresamente prohibida su comercialización, distribución con fines lucrativos o reproducción parcial o total con fines distintos al uso clínico personal.</strong> El uso de esta aplicación implica la aceptación de estas condiciones.</p>
       <p style="font-size:11px;color:#64748b;line-height:1.5;margin:0">La información contenida puede no reflejar actualizaciones posteriores a la publicación original. Ante cualquier duda, consulte las fuentes oficiales o a un especialista en Enfermedades Infecciosas.</p>
     </div>
     </div>
