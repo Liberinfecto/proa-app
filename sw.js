@@ -1,4 +1,4 @@
-const CACHE = 'proa-pocket-v1';
+const CACHE = 'proa-pocket-v2';
 const ASSETS = [
   '/',
   '/index.html',
