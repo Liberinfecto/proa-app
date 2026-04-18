@@ -1084,7 +1084,7 @@ function renderPATablesUI(idx) {
 
     return `
       <div class="table-swipe-card" id="pa-swipe-card-${i}" style="height:auto;min-height:0">
-        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head">${t.title}</div>
           <div>${inner}</div>
         </div>
@@ -1603,7 +1603,7 @@ function renderPPBTablesUI(idx) {
       </div>`;
     }
     return `<div class="table-swipe-card" id="ppb-swipe-card-${i}" style="height:auto;min-height:0">
-      <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
+      <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
         <div class="table-swipe-head">${t.title}</div>
         ${inner}
       </div>
