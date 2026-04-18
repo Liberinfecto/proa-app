@@ -6344,7 +6344,7 @@ function renderTablesUI(idx) {
 
     return `
       <div class="table-swipe-card" id="swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="height:auto;max-height:calc(100vh - 245px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head">${t.title}</div>
           <div>${rowsHTML}</div>
           ${t.note ? `<div class="tbl-note">ℹ️ ${t.note}</div>` : ''}
