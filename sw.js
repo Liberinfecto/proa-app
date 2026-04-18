@@ -1,4 +1,4 @@
-const CACHE = 'proa-pocket-v6';
+const CACHE = 'proa-pocket-v5';
 const ASSETS = [
   '/',
   '/index.html',
@@ -40,25 +40,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
-  const isAsset = ASSETS.some(a => url.pathname === a || url.pathname.endsWith(a));
-
-  if (isAsset) {
-    // Stale-while-revalidate: sirve cache inmediatamente y actualiza en fondo
-    e.respondWith(
-      caches.open(CACHE).then(cache =>
-        cache.match(e.request).then(cached => {
-          const fetchPromise = fetch(e.request).then(response => {
-            if (response.ok) cache.put(e.request, response.clone());
-            return response;
-          }).catch(() => cached);
-          return cached || fetchPromise;
-        })
-      )
-    );
-  } else {
-    e.respondWith(
-      caches.match(e.request).then(cached => cached || fetch(e.request))
-    );
-  }
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
 });

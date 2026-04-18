@@ -1083,8 +1083,8 @@ function renderPATablesUI(idx) {
     }
 
     return `
-      <div class="table-swipe-card" id="pa-swipe-card-${i}">
-        <div class="table-swipe-inner">
+      <div class="table-swipe-card" id="pa-swipe-card-${i}" style="height:auto;min-height:0">
+        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head">${t.title}</div>
           <div>${inner}</div>
         </div>
@@ -1096,7 +1096,7 @@ function renderPATablesUI(idx) {
   ).join('');
 
   document.getElementById('pa-tables-panels').innerHTML = `
-    <div class="tables-swipe-container" id="pa-tables-swipe" style="flex:1">${cardsHTML}</div>
+    <div class="tables-swipe-container" id="pa-tables-swipe" style="flex:1;align-items:start">${cardsHTML}</div>
     <div class="swipe-dot-nav">${dotsHTML}</div>`;
 
   requestAnimationFrame(() => {
@@ -1602,8 +1602,8 @@ function renderPPBTablesUI(idx) {
           </div>`).join('')}
       </div>`;
     }
-    return `<div class="table-swipe-card" id="ppb-swipe-card-${i}">
-      <div class="table-swipe-inner">
+    return `<div class="table-swipe-card" id="ppb-swipe-card-${i}" style="height:auto;min-height:0">
+      <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
         <div class="table-swipe-head">${t.title}</div>
         ${inner}
       </div>
@@ -1615,7 +1615,7 @@ function renderPPBTablesUI(idx) {
   ).join('');
 
   document.getElementById('ppb-tables-panels').innerHTML = `
-    <div class="tables-swipe-container" id="ppb-tables-swipe" style="flex:1">${cardsHTML}</div>
+    <div class="tables-swipe-container" id="ppb-tables-swipe" style="flex:1;align-items:start">${cardsHTML}</div>
     <div class="swipe-dot-nav">${dotsHTML}</div>`;
 
   requestAnimationFrame(() => {
@@ -2128,8 +2128,8 @@ function renderPIETablesUI(idx) {
       </div>`;
     }
 
-    return `<div class="table-swipe-card" id="pie-swipe-card-${i}">
-      <div class="table-swipe-inner">
+    return `<div class="table-swipe-card" id="pie-swipe-card-${i}" style="height:auto;min-height:0">
+      <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
         <div class="table-swipe-head">${t.title}</div>
         ${inner}
       </div>
@@ -2141,7 +2141,7 @@ function renderPIETablesUI(idx) {
   ).join('');
 
   document.getElementById('pie-tables-panels').innerHTML = `
-    <div class="tables-swipe-container" id="pie-tables-swipe" style="flex:1">${cardsHTML}</div>
+    <div class="tables-swipe-container" id="pie-tables-swipe" style="flex:1;align-items:start">${cardsHTML}</div>
     <div class="swipe-dot-nav">${dotsHTML}</div>`;
 
   requestAnimationFrame(() => {
@@ -2447,7 +2447,7 @@ function renderARTablesUI(idx) {
       const q = t.sections[0];
       return `
         <div class="table-swipe-card" id="ar-swipe-card-${i}">
-          <div class="table-swipe-inner">
+          <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
             <div class="table-swipe-head">${t.title}</div>
             <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
               <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${q.head}</div>
@@ -2479,7 +2479,7 @@ function renderARTablesUI(idx) {
     const scrollable = t.id === 'ar_micro';
     return `
       <div class="table-swipe-card" id="ar-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="${scrollable ? 'overflow-y:auto;max-height:calc(100vh - 200px);-webkit-overflow-scrolling:touch' : 'height:auto;min-height:0;overflow-y:visible'}">
           <div class="table-swipe-head">${t.title}</div>
           ${sectionsHTML}
         </div>
@@ -2783,7 +2783,7 @@ function renderOFTablesUI(idx) {
       const q = t.sections[0];
       return `
         <div class="table-swipe-card" id="of-swipe-card-${i}">
-          <div class="table-swipe-inner">
+          <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
             <div class="table-swipe-head">${t.title}</div>
             <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
               <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${q.head}</div>
@@ -2815,7 +2815,7 @@ function renderOFTablesUI(idx) {
 
     return `
       <div class="table-swipe-card" id="of-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
           <div class="table-swipe-head">${t.title}</div>
           ${sectionsHTML}
         </div>
@@ -3196,7 +3196,7 @@ function renderOVTablesUI(idx) {
     if (t.id === 'ov_qsofa') {
       const q = t.sections[0];
       return `<div class="table-swipe-card" id="ov-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible">
           <div class="table-swipe-head">${t.title}</div>
           <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
             <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${q.head}</div>
@@ -3210,7 +3210,7 @@ function renderOVTablesUI(idx) {
     }
     if (t.type === 'ov_micro_table') {
       return `<div class="table-swipe-card" id="ov-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="overflow-y:auto;max-height:calc(100vh - 200px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head">${t.title}</div>
           <div style="padding:10px 10px">
             <table class="tbl" style="font-size:11px">
@@ -3222,7 +3222,7 @@ function renderOVTablesUI(idx) {
       </div>`;
     }
     const sectionsHTML = t.sections.map(s => `<div style="padding:10px 11px;border-bottom:1px solid #e8f0f7"><div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${s.head}</div>${s.items.map(item => `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}</div>`).join('');
-    return `<div class="table-swipe-card" id="ov-swipe-card-${i}"><div class="table-swipe-inner"><div class="table-swipe-head">${t.title}</div>${sectionsHTML}</div></div>`;
+    return `<div class="table-swipe-card" id="ov-swipe-card-${i}"><div class="table-swipe-inner" style="height:auto;min-height:0;overflow-y:visible"><div class="table-swipe-head">${t.title}</div>${sectionsHTML}</div></div>`;
   }).join('');
   const dotsHTML = OSTEO_V_TABLES.map((_,i) => `<div class="swipe-dot${i===idx?' active':''}" onclick="ovSwipeToTable(${i})"></div>`).join('');
   document.getElementById('ov-tables-panels').innerHTML = `<div class="tables-swipe-container" id="ov-tables-swipe">${cardsHTML}</div><div class="swipe-dot-nav">${dotsHTML}</div>`;
@@ -3586,7 +3586,7 @@ function renderMENITablesUI(idx) {
         ` : s.items.map(item => `<div style="font-size:12px;color:#1e293b;line-height:1.45;margin-bottom:4px">• ${item}</div>`).join('')}
       </div>`).join('');
     return `<div class="table-swipe-card" id="meni-swipe-card-${i}">
-      <div class="table-swipe-inner">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
         <div class="table-swipe-head">${t.title}</div>
         ${sectionsHTML}
       </div>
@@ -3986,7 +3986,7 @@ function renderCVCTablesUI(idx) {
         }).join('')}
       </div>`).join('');
     return `<div class="table-swipe-card" id="cvc-swipe-card-${i}">
-      <div class="table-swipe-inner">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
         <div class="table-swipe-head">${t.title}</div>
         ${sectionsHTML}
       </div>
@@ -4270,7 +4270,7 @@ function renderDCEITablesUI(idx) {
         }).join('')}
       </div>`).join('');
     return `<div class="table-swipe-card" id="dcei-swipe-card-${i}">
-      <div class="table-swipe-inner">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
         <div class="table-swipe-head">${t.title}</div>
         ${sectionsHTML}
       </div>
@@ -4557,7 +4557,7 @@ function renderENDOTablesUI(idx) {
         }).join('')}
       </div>`).join('');
     return `<div class="table-swipe-card" id="endo-swipe-card-${i}">
-      <div class="table-swipe-inner">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
         <div class="table-swipe-head">${t.title}</div>
         ${sectionsHTML}
       </div>
@@ -4875,7 +4875,7 @@ function renderITUTablesUI(idx) {
   const cardsHTML = ITU_TABLES.map((t, i) => {
     if (t.type === 'itu_orenuc') {
       return `<div class="table-swipe-card" id="itu-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head">${t.title}</div>
           <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7;background:#eff6ff">
             <div style="font-size:11px;font-weight:800;color:#1d4ed8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Definición</div>
@@ -4902,7 +4902,7 @@ function renderITUTablesUI(idx) {
         </div>
       `).join('');
       return `<div class="table-swipe-card" id="itu-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head" style="background:linear-gradient(160deg,#ef4444 0%,#dc2626 100%)">${t.title}</div>
           ${sectionsHTML}
           <div class="tbl-note">${t.foot}</div>
@@ -4934,7 +4934,7 @@ function renderITUTablesUI(idx) {
     }).join('');
 
     return `<div class="table-swipe-card" id="itu-swipe-card-${i}">
-      <div class="table-swipe-inner">
+      <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
         <div class="table-swipe-head">${t.title}</div>
         ${sectionsHTML}
       </div>
@@ -5200,7 +5200,7 @@ function renderNAVTablesUI(idx) {
 
       return `
         <div class="table-swipe-card" id="nav-swipe-card-${i}">
-          <div class="table-swipe-inner">
+          <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
             <div class="table-swipe-head">${t.title}</div>
             ${cards}
           </div>
@@ -5243,7 +5243,7 @@ function renderNAVTablesUI(idx) {
 
     return `
       <div class="table-swipe-card" id="nav-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head">${t.title}</div>
           ${sectionsHTML}
         </div>
@@ -5604,7 +5604,7 @@ function renderNIHTablesUI(idx) {
       const q = t.sections[0];
       return `
         <div class="table-swipe-card" id="nih-swipe-card-${i}">
-          <div class="table-swipe-inner">
+          <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
             <div class="table-swipe-head">${t.title}</div>
             <div style="padding:10px 11px;border-bottom:1px solid #e8f0f7">
               <div style="font-size:11px;font-weight:800;color:#0c4a6e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${q.head}</div>
@@ -5655,7 +5655,7 @@ function renderNIHTablesUI(idx) {
 
     return `
       <div class="table-swipe-card" id="nih-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head" style="${t.id === 'nih_mdr' || t.id === 'nih_specific' ? 'background:linear-gradient(160deg,#ef4444 0%,#dc2626 100%)' : ''}">${t.title}</div>
           ${sectionsHTML}
         </div>
@@ -5988,7 +5988,7 @@ function renderNACTablesUI(idx) {
       }).join('');
       return `
         <div class="table-swipe-card" id="nac-swipe-card-${i}">
-          <div class="table-swipe-inner">
+          <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
             <div class="table-swipe-head" style="${headStyle}">${t.title}</div>
             <div style="padding:10px;display:grid;grid-template-columns:1fr;gap:10px">
               ${allergyCols}
@@ -6031,7 +6031,7 @@ function renderNACTablesUI(idx) {
 
     return `
       <div class="table-swipe-card" id="nac-swipe-card-${i}">
-        <div class="table-swipe-inner">
+        <div class="table-swipe-inner" style="background:white;border-radius:var(--radius);box-shadow:var(--shadow-md);border:1px solid rgba(0,0,0,.06);overflow-y:auto;overflow-x:hidden;height:auto;max-height:calc(100vh - 245px);-webkit-overflow-scrolling:touch">
           <div class="table-swipe-head" style="${headStyle}">${t.title}</div>
           ${sectionsHTML}
         </div>
