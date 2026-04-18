@@ -934,7 +934,8 @@ body {
   background: white; border-radius: var(--radius);
   box-shadow: var(--shadow-md); border: 1px solid rgba(0,0,0,.06);
   overflow-y: auto; overflow-x: hidden;
-  height: 100%;
+  height: auto;
+  max-height: 100%;
   -webkit-overflow-scrolling: touch;
 }
 .table-swipe-head {
