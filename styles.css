@@ -918,6 +918,7 @@ body {
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
   padding: 0; width: 100%;
   flex: 1;
+  min-height: 0;
   overscroll-behavior-x: contain;
   overscroll-behavior-y: none;
 }
@@ -928,7 +929,6 @@ body {
   scroll-snap-stop: always;
   padding: 10px 12px 12px;
   box-sizing: border-box;
-  height: 100%;
 }
 .table-swipe-inner {
   background: white; border-radius: var(--radius);
