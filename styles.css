@@ -929,6 +929,7 @@ body {
   scroll-snap-stop: always;
   padding: 10px 12px 12px;
   box-sizing: border-box;
+  height: 100%;
 }
 .table-swipe-inner {
   background: white; border-radius: var(--radius);
