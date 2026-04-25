@@ -747,7 +747,6 @@ function renderNodePA(nodeId) {
 
       <div class="choices">
         <button class="btn-primary" onclick="paNavigate('${node.next}')">Evolución temporal →</button>
-        <button class="btn-back" onclick="paGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -788,7 +787,6 @@ function renderNodePA(nodeId) {
       </div>
 
       <div class="choices">
-        <button class="btn-back" onclick="paGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -835,7 +833,6 @@ function renderNodePA(nodeId) {
       </div>
 
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="paGoBack()">← Volver</button>
         <button class="btn-back" onclick="paRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -865,7 +862,6 @@ function renderNodePA(nodeId) {
       </div>
 
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="paGoBack()">← Volver</button>
         <button class="btn-back" onclick="paRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -918,7 +914,6 @@ function renderNodePA(nodeId) {
       </div>
 
       <div class="choices">
-        <button class="btn-back" onclick="paGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -962,7 +957,6 @@ function renderNodePA(nodeId) {
       </div>
 
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="paGoBack()">← Volver</button>
         <button class="btn-back" onclick="paRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -1279,7 +1273,6 @@ function renderNodePPB(nodeId) {
       </div>
       <button class="btn-tables" onclick="showTablesPPB(0)" style="margin-top:4px">📋 Tabla 1 — Criterios sistémicos (*)</button>
       <div class="choices" style="margin-top:4px">
-        <button class="btn-back" onclick="ppbGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -1314,7 +1307,6 @@ function renderNodePPB(nodeId) {
       <button class="btn-tables" onclick="showTablesPPB(0)" style="margin-top:4px">📋 Tabla 1 — Criterios sistémicos (*)</button>
       <button class="btn-tables" onclick="showTablesPPB(1)" style="margin-top:6px">📋 Tabla 2 — Factores de Riesgo para SAMR</button>
       <div class="choices" style="margin-top:4px">
-        <button class="btn-back" onclick="ppbGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -1424,7 +1416,6 @@ function renderNodePPB(nodeId) {
       </div>
 
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="ppbGoBack()">← Volver</button>
         <button class="btn-back" onclick="ppbRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -1494,7 +1485,6 @@ function renderNodePPB(nodeId) {
       ${cardsHTML}
 
       <div class="choices" style="margin-top:4px">
-        <button class="btn-back" onclick="ppbGoBack()">← Volver</button>
         <button class="btn-back" onclick="ppbRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -1560,7 +1550,6 @@ function renderNodePPB(nodeId) {
       </div>
 
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="ppbGoBack()">← Volver</button>
         <button class="btn-back" onclick="ppbRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -1948,7 +1937,6 @@ function renderNodePIE(nodeId) {
         </div>
       </div>
       <div class="choices" style="margin-top:4px">
-        <button class="btn-back" onclick="pieGoBack()">← Volver</button>
         <button class="btn-back" onclick="pieRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -2044,7 +2032,6 @@ function renderNodePIE(nodeId) {
       ${cardsWrapper}
       ${monBlock}
       <div class="choices" style="margin-top:4px">
-        <button class="btn-back" onclick="pieGoBack()">← Volver</button>
         <button class="btn-back" onclick="pieRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -2343,7 +2330,6 @@ function renderNodeAR(nodeId) {
           <span>Siguiente</span>
         </button>
       </div>
-      <div class="choices"><button class="btn-back" onclick="arGoBack()">← Volver</button></div>`;
   } else if (node.type === 'ar_info') {
     const sectionsHTML = node.sections.map(s => `
       <div class="info-section">
@@ -2369,9 +2355,7 @@ function renderNodeAR(nodeId) {
             <span>Siguiente</span>
           </button>
         </div>
-        <div class="choices"><button class="btn-back" onclick="arGoBack()">← Volver</button></div>
       ` : `
-        <div class="choices"><button class="btn-back" onclick="arGoBack()">← Volver</button></div>
       `}`;
   } else if (node.type === 'ar_choice' || node.type === 'ar_route') {
     html = `
@@ -2392,7 +2376,6 @@ function renderNodeAR(nodeId) {
           </button>
         `).join('')}
         ${typeof node.tableIndex === 'number' ? `<button class="btn-tables" onclick="showTablesAR(${node.tableIndex})">📋 FR MDR y mala evolución</button>` : ''}
-        <button class="btn-back" onclick="arGoBack()">← Volver</button>
       </div>`;
   } else if (node.type === 'ar_treatment') {
     html = `
@@ -2419,7 +2402,6 @@ function renderNodeAR(nodeId) {
         ${node.actionButtons ? node.actionButtons.map((b, idx) => `<button class="btn-tables" onclick="showTablesAR(${b.tableIndex})" style="${idx ? 'margin-top:8px' : ''}">📋 ${b.label}</button>`).join('') : ''}
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="arGoBack()">← Volver</button>
         <button class="btn-back" onclick="arRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -2697,9 +2679,7 @@ function renderNodeOF(nodeId) {
             <span>Siguiente</span>
           </button>
         </div>
-        <div class="choices"><button class="btn-back" onclick="ofGoBack()">← Volver</button></div>
       ` : `
-        <div class="choices"><button class="btn-back" onclick="ofGoBack()">← Volver</button></div>
       `}`;
   } else if (node.type === 'of_route') {
     html = `
@@ -2718,7 +2698,6 @@ function renderNodeOF(nodeId) {
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>
         `).join('')}
-        <button class="btn-back" onclick="ofGoBack()">← Volver</button>
       </div>`;
   } else if (node.type === 'of_treatment') {
     html = `
@@ -2755,7 +2734,6 @@ function renderNodeOF(nodeId) {
         ${node.actionButtons ? node.actionButtons.map((b, idx) => `<button class="btn-tables" onclick="showTablesOF(${b.tableIndex})" style="${idx ? 'margin-top:8px' : ''}">📋 ${b.label}</button>`).join('') : ''}
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="ofGoBack()">← Volver</button>
         <button class="btn-back" onclick="ofRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -2999,7 +2977,6 @@ function renderNodeOV(nodeId) {
       <div class="triangle-nav-wrap">
         <button class="triangle-nav-btn" onclick="ovNavigate('${node.next}')"><div class="tri"></div><span>Siguiente</span></button>
       </div>
-      <div class="choices"><button class="btn-back" onclick="ovGoBack()">← Volver</button></div>`;
   } else if (node.type === 'ov_diag') {
     html = `
       <div class="step-card" style="padding:14px">
@@ -3028,7 +3005,6 @@ function renderNodeOV(nodeId) {
       <div class="triangle-nav-wrap">
         <button class="triangle-nav-btn" onclick="ovNavigate('${node.next}')"><div class="tri"></div><span>Siguiente</span></button>
       </div>
-      <div class="choices"><button class="btn-back" onclick="ovGoBack()">← Volver</button></div>`;
   } else if (node.type === 'ov_route') {
     html = `
       <div class="step-card">
@@ -3045,7 +3021,6 @@ function renderNodeOV(nodeId) {
             </div>
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>`).join('')}
-        <button class="btn-back" onclick="ovGoBack()">← Volver</button>
       </div>`;
   } else if (node.type === 'ov_tx_intro') {
     html = `
@@ -3065,7 +3040,6 @@ function renderNodeOV(nodeId) {
             </div>
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>`).join('')}
-        <button class="btn-back" onclick="ovGoBack()">← Volver</button>
       </div>`;
   } else if (node.type === 'ov_treatment') {
     html = `
@@ -3101,7 +3075,6 @@ function renderNodeOV(nodeId) {
         ${node.actionButtons ? node.actionButtons.map((b, idx) => `<button class="btn-tables" onclick="showTablesOV(${b.tableIndex})" style="${idx ? 'margin-top:8px' : ''}">📋 ${b.label}</button>`).join('') : ''}
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="ovGoBack()">← Volver</button>
         <button class="btn-back" onclick="ovRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -3416,7 +3389,6 @@ function renderNodeMENI(nodeId) {
             </div>
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>`).join('')}
-        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
       </div>`;
 
   } else if (node.type === 'meni_route' && nodeId === 'meni_ct') {
@@ -3436,7 +3408,6 @@ function renderNodeMENI(nodeId) {
         </div>
       </div>
       <div class="choices">
-        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
       </div>`;
 
   } else if (node.type === 'meni_route') {
@@ -3452,7 +3423,6 @@ function renderNodeMENI(nodeId) {
             </div>
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>`).join('')}
-        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
       </div>`;
 
   } else if (node.type === 'meni_lcr') {
@@ -3533,7 +3503,6 @@ function renderNodeMENI(nodeId) {
             <button class="btn-tables" onclick="showTablesMENI(2)" style="width:auto;min-width:auto">📋 Tratamiento específico</button>
           </div>
         </div>
-        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
       </div>`;
 
   } else if (node.type === 'meni_treatment') {
@@ -3549,7 +3518,6 @@ function renderNodeMENI(nodeId) {
         <button class="btn-tables" onclick="showTablesMENI(2)">📋 Tratamiento específico</button>
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="meniGoBack()">← Volver</button>
         <button class="btn-back" onclick="meniRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -3806,7 +3774,6 @@ function renderNodeCVC(nodeId) {
               <div style="font-size:12.4px;line-height:1.4;color:#111827;font-weight:800">${node.dualFlow.buttonLabel}</div>
             </button>
           </div>` : ''}
-        <button class="btn-back" onclick="cvcGoBack()">← Volver</button>
       </div>`;
   } else if (node.type === 'cvc_info') {
     html = `
@@ -3890,7 +3857,6 @@ function renderNodeCVC(nodeId) {
         ${node.actions ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actions.map(b => `<button class="btn-tables" onclick="showTablesCVC(${b.tableIndex})" style="width:auto;min-width:auto;padding:6px 9px;font-size:10.5px;border-radius:9px;box-shadow:none;margin-top:0;text-align:center">📋 ${b.label}</button>`).join('')}</div>` : ''}
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="cvcGoBack()">← Volver</button>
         <button class="btn-back" onclick="cvcRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   } else if (node.type === 'cvc_treatment') {
@@ -3947,7 +3913,6 @@ function renderNodeCVC(nodeId) {
             </div>
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>`).join('') : ''}
-        <button class="btn-back" onclick="cvcGoBack()">← Volver</button>
         <button class="btn-back" onclick="cvcRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -4182,7 +4147,6 @@ function renderNodeDCEI(nodeId) {
               <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
             </button>`;
         }).join('')}
-        <button class="btn-back" onclick="dceiGoBack()">← Volver</button>
       </div>`;
   } else if (node.type === 'dcei_info') {
     html = `
@@ -4204,7 +4168,6 @@ function renderNodeDCEI(nodeId) {
         ${node.nextButton ? `<div style="display:flex;justify-content:center;margin-top:10px"><button class="triangle-nav-btn" onclick="dceiNavigate('${node.nextButton.next}')"><div class="tri"></div><span>${node.nextButton.label}</span></button></div>` : ''}
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="dceiGoBack()">← Volver</button>
         <button class="btn-back" onclick="dceiRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   } else if (node.type === 'dcei_treatment') {
@@ -4231,7 +4194,6 @@ function renderNodeDCEI(nodeId) {
             </div>
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>`).join('') : ''}
-        <button class="btn-back" onclick="dceiGoBack()">← Volver</button>
         <button class="btn-back" onclick="dceiRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -4451,7 +4413,6 @@ function renderNodeENDO(nodeId) {
               <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
             </button>`;
         }).join('')}
-        <button class="btn-back" onclick="endoGoBack()">← Volver</button>
       </div>`;
   } else if (node.type === 'endo_info') {
     html = `
@@ -4473,7 +4434,6 @@ function renderNodeENDO(nodeId) {
         ${node.actionButtons ? `<div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:10px">${node.actionButtons.map(b => `<button class="btn-tables" onclick="showTablesENDO(${b.tableIndex})" style="width:auto;min-width:auto;text-align:center">${b.label}</button>`).join('')}</div>` : ''}
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="endoGoBack()">← Volver</button>
         <button class="btn-back" onclick="endoRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   } else if (node.type === 'endo_route') {
@@ -4503,7 +4463,6 @@ function renderNodeENDO(nodeId) {
             </div>
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>`).join('')}
-        <button class="btn-back" onclick="endoGoBack()">← Volver</button>
       </div>`;
   } else if (node.type === 'endo_treatment') {
     html = `
@@ -4518,7 +4477,6 @@ function renderNodeENDO(nodeId) {
         <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px">${node.actions.map(b => `<button class="btn-tables" onclick="showTablesENDO(${b.tableIndex})" style="width:auto;min-width:auto;text-align:center">${b.label}</button>`).join('')}</div>
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="endoGoBack()">← Volver</button>
         <button class="btn-back" onclick="endoRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -4771,7 +4729,6 @@ function renderNodeITU(nodeId) {
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>
         `).join('')}
-        <button class="btn-back" onclick="ituGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -4792,7 +4749,6 @@ function renderNodeITU(nodeId) {
             <div class="origin-choice-arrow" style="color:${node.color}">›</div>
           </button>
         `).join('')}
-        <button class="btn-back" onclick="ituGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -4824,7 +4780,6 @@ function renderNodeITU(nodeId) {
         <button class="btn-tables" onclick="showTablesITU(4)" style="margin-top:8px">📋 Uso de amikacina</button>
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="ituGoBack()">← Volver</button>
         <button class="btn-back" onclick="ituRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -4846,7 +4801,6 @@ function renderNodeITU(nodeId) {
         <button class="btn-tables" onclick="showTablesITU(3)">📋 FR de resistencia</button>
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="ituGoBack()">← Volver</button>
         <button class="btn-back" onclick="ituRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -5116,7 +5070,6 @@ function renderNodeNAV(nodeId) {
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>
         `).join('')}
-        <button class="btn-back" onclick="navGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -5156,7 +5109,6 @@ function renderNodeNAV(nodeId) {
         <button class="btn-tables" onclick="showTablesNAV(3)" style="margin-top:8px">📋 Reevaluación 48 / 72 hs</button>
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="navGoBack()">← Volver</button>
         <button class="btn-back" onclick="navRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -5506,7 +5458,6 @@ function renderNodeNIH(nodeId) {
             <div class="origin-choice-arrow" style="color:${opt.color}">›</div>
           </button>
         `).join('')}
-        <button class="btn-back" onclick="nihGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -5528,7 +5479,6 @@ function renderNodeNIH(nodeId) {
           </button>
         `).join('')}
         <button class="btn-tables" onclick="showTablesNIH(2)">📋 Ver FR para microorganismos resistentes</button>
-        <button class="btn-back" onclick="nihGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -5572,7 +5522,6 @@ function renderNodeNIH(nodeId) {
         <button class="btn-tables" onclick="showTablesNIH(4)" style="margin-top:8px">📋 Rotación a VO</button>
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="nihGoBack()">← Volver</button>
         <button class="btn-back" onclick="nihRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -5847,7 +5796,6 @@ function renderNodeNAC(nodeId) {
             <span class="choice-arrow" style="color:${g.border}">›</span>
           </button>
         `).join('')}
-        <button class="btn-back" onclick="nacGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -5885,7 +5833,6 @@ function renderNodeNAC(nodeId) {
         ` : ''}
         ${node.title.includes('Grupo 1') ? `<button class="btn-tables" onclick="showTablesNAC(0)">📋 Comorbilidades a considerar</button>` : ''}
         ${node.hideResistanceButton ? '' : `<button class="btn-tables" onclick="showTablesNAC(1)">📋 Ver FR para microorganismos resistentes</button>`}
-        <button class="btn-back" onclick="nacGoBack()">← Volver</button>
       </div>`;
   }
 
@@ -5934,7 +5881,6 @@ function renderNodeNAC(nodeId) {
         <button class="btn-tables" onclick="showTablesNAC(2)" style="margin-top:8px">📋 Alergia a β-lactámicos</button>
       </div>
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="nacGoBack()">← Volver</button>
         <button class="btn-back" onclick="nacRestart()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -6512,7 +6458,6 @@ function renderNode(nodeId) {
             </button>`;
         }).join('')}
         ${history.length > 0
-          ? `<button class="btn-back" onclick="goBack()">← Volver</button>` : ''}
       </div>`;
   }
 
@@ -6613,7 +6558,6 @@ function renderNode(nodeId) {
       </div>
 
       <div class="choices">
-        <button class="btn-back" onclick="goBack()">← Volver</button>
       </div>`;
   }
 
@@ -6643,7 +6587,6 @@ function renderNode(nodeId) {
         `).join('')}
       </div>
       <div class="choices">
-        <button class="btn-back" onclick="goBack()">← Volver</button>
       </div>`;
   }
 
@@ -6679,7 +6622,6 @@ function renderNode(nodeId) {
         </div>
       </div>
       <div class="choices">
-        <button class="btn-back" onclick="goBack()">← Volver</button>
         <button class="btn-back" onclick="restartFlow()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -6727,7 +6669,6 @@ function renderNode(nodeId) {
       </div>
 
       <div class="choices">
-        <button class="btn-back" onclick="goBack()">← Volver</button>
         <button class="btn-back" onclick="restartFlow()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
@@ -6812,7 +6753,6 @@ function renderNode(nodeId) {
       <!-- Navegación -->
       <div class="choices">
         <button class="btn-primary" onclick="navigate('${node.next}')">Evaluar tipo de IIA →</button>
-        <button class="btn-back" onclick="goBack()">← Volver</button>
       </div>`;
   }
 
@@ -6853,7 +6793,6 @@ function renderNode(nodeId) {
       </div>
 
       <div class="choices" style="margin-top:10px">
-        <button class="btn-back" onclick="goBack()">← Volver</button>
         <button class="btn-back" onclick="restartFlow()" style="margin-top:4px">↩️ Nuevo caso</button>
       </div>`;
   }
