@@ -2329,7 +2329,7 @@ function renderNodeAR(nodeId) {
           <div class="tri"></div>
           <span>Siguiente</span>
         </button>
-      </div>
+      </div>`;
   } else if (node.type === 'ar_info') {
     const sectionsHTML = node.sections.map(s => `
       <div class="info-section">
@@ -2976,7 +2976,7 @@ function renderNodeOV(nodeId) {
       </div>
       <div class="triangle-nav-wrap">
         <button class="triangle-nav-btn" onclick="ovNavigate('${node.next}')"><div class="tri"></div><span>Siguiente</span></button>
-      </div>
+      </div>`;
   } else if (node.type === 'ov_diag') {
     html = `
       <div class="step-card" style="padding:14px">
@@ -3004,7 +3004,7 @@ function renderNodeOV(nodeId) {
       </div>
       <div class="triangle-nav-wrap">
         <button class="triangle-nav-btn" onclick="ovNavigate('${node.next}')"><div class="tri"></div><span>Siguiente</span></button>
-      </div>
+      </div>`;
   } else if (node.type === 'ov_route') {
     html = `
       <div class="step-card">
@@ -6457,7 +6457,7 @@ function renderNode(nodeId) {
               <span class="choice-arrow" style="color:${c.border}">›</span>
             </button>`;
         }).join('')}
-        ${history.length > 0
+        
       </div>`;
   }
 
@@ -6555,9 +6555,6 @@ function renderNode(nodeId) {
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="choices">
       </div>`;
   }
 
@@ -6585,8 +6582,6 @@ function renderNode(nodeId) {
             <div style="text-align:right;margin-top:8px;font-size:18px;color:${opt.border}">›</div>
           </button>
         `).join('')}
-      </div>
-      <div class="choices">
       </div>`;
   }
 
