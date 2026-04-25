@@ -30,7 +30,6 @@
 
 html {
   height: 100%;
-  overflow: hidden;
   overscroll-behavior: none;
 }
 
@@ -39,7 +38,6 @@ body {
   background: linear-gradient(160deg, #eef3f8 0%, #e8eef5 100%);
   color: var(--gray-800);
   height: 100%;
-  overflow: hidden;
   overscroll-behavior: none;
   max-width: 480px;
   margin: 0 auto;
